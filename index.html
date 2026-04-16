@@ -4979,7 +4979,7 @@ window.cargarInspectorLogin = function() {
     .catch(function() {
       document.getElementById('login-nombre').innerHTML = '<option value="">Error cargando lista</option>';
     });
-}
+};
 
 window.addEventListener('load', () => {
   cargarInspectorLogin();
