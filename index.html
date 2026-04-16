@@ -864,6 +864,7 @@
       <div class="card-titulo" style="margin-top:10px;margin-bottom:8px;">Comuna</div>
       <div class="filtros-comunas" id="chips-comunas">
         <!-- generado dinámicamente por poblarChipsComunas() -->
+        <button class="btn-filtro" onclick="toggleFiltroRural(this)">🌾 Rural</button>
       </div>
       <!-- Filtro por visitador — solo ADMIN -->
       <div id="bloque-filtro-visitador" style="display:none;">
@@ -2005,10 +2006,9 @@ function normalizarEstado(raw) {
 
 // ── Aplicar filtros combinados y re-renderizar ────────────────────────────
 function aplicarFiltros() {
-  if (!ST.datos || !ST.datos.length) return;
-  const tieneEstado = ST.filtrosEstado.length > 0;
-  const tieneComuna = ST.filtroComunas.length > 0;
-  const tieneVisitador = ST.filtrosVisitador && ST.filtrosVisitador.length > 0;
+  const tieneEstado = Object.values(ST._filtrosEstado).some(x => x);
+  const tieneComuna = Object.values(ST._filtrosComuna).some(x => x);
+  const tieneVisitador = ST._filtroVisitador.length > 0;
   const tieneRural = ST._filtroRural;
 
   const filtrados = ST.datos
@@ -2083,6 +2083,17 @@ function toggleFiltroComuna(btn, comuna) {
   aplicarFiltros();
 }
 
+function toggleFiltroRural(btn) {
+  if (!ST._filtroRural) {
+    ST._filtroRural = true;
+    btn.classList.add('activo-pendiente');
+  } else {
+    ST._filtroRural = false;
+    btn.classList.remove('activo-pendiente', 'activo-iniciado', 'activo-completado');
+  }
+  aplicarFiltros();
+}
+  
 // ── Limpiar todos los filtros ─────────────────────────────────────────────
 function limpiarFiltros() {
   ST.filtrosEstado = [];
@@ -2098,9 +2109,9 @@ function limpiarFiltros() {
     b.classList.remove('activo-iniciado');
   });
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
-  if (btnLimpiar) btnLimpiar.classList.remove('visible');
-  renderLista(ST.datos.map(f => ({ f, i: f._idx })));
-}
+  if (btnLimpiar) {
+    btnLimpiar.classList.toggle('visible', tieneEstado || tieneComuna || tieneVisitador || tieneRural);
+  }
 
 // ── Poblar chips de comunas dinámicamente ────────────────────────────────
 function poblarChipsComunas(datos) {
@@ -3067,17 +3078,33 @@ async function mejorarRedaccion() {
   const textarea = document.getElementById('transcripcion');
   const texto = textarea.value.trim();
   if (!texto) { notif('Escribe o graba primero la descripción', 'error'); return; }
-
   const btn = document.getElementById('btn-mejorar');
   btn.disabled = true;
   btn.textContent = '⏳ Mejorando...';
   showLoading('Mejorando redacción...', 'Claude AI está procesando el texto');
-
   try {
-    const url = CFG.webhook + '?accion=mejorarTexto&texto=' + encodeURIComponent(texto);
-    const response = await fetch(url);
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CFG.claudeKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-20250805',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Mejora esta descripción de inspección urbanística manteniendo todos los hechos. Usa lenguaje técnico formal, sin puntos suspensivos. Máximo 1460 caracteres:\n\n"${texto}"`
+        }]
+      })
+    });
     const data = await response.json();
-    const textMejorado = data.texto || '';
+    if (data.error) {
+      notif('Error Claude: ' + data.error.message, 'error');
+      return;
+    }
+    const textMejorado = (data.content[0]?.text || '').trim();
     if (textMejorado) {
       hideLoading();
       const conf = confirm(`TEXTO MEJORADO:\n\n${textMejorado}\n\n¿Reemplazar el texto original?`);
@@ -5897,17 +5924,23 @@ document.addEventListener('click', () => {
 
 function abrirModalAsignar(filaSheets, rad, dir) {
   _asignarFila = filaSheets;
+  const hoy = new Date().toISOString().split('T')[0];
   document.getElementById('modal-asignar-titulo').textContent = 'Asignar ' + rad;
   document.getElementById('modal-asignar-dir').textContent = dir;
-  document.getElementById('modal-asignar-fecha').value = new Date().toISOString().split('T')[0];
+  const fechaInput = document.getElementById('modal-asignar-fecha');
+  fechaInput.value = hoy;
+  fechaInput.disabled = true;
   document.getElementById('modal-asignar').style.display = 'flex';
 }
 
 function abrirModalAsignarIniciado(filaSheets, rad, dir) {
   _asignarFila = filaSheets;
+  const hoy = new Date().toISOString().split('T')[0];
   document.getElementById('modal-asignar-titulo').textContent = 'Reasignar ' + rad;
   document.getElementById('modal-asignar-dir').textContent = dir;
-  document.getElementById('modal-asignar-fecha').value = new Date().toISOString().split('T')[0];
+  const fechaInput = document.getElementById('modal-asignar-fecha');
+  fechaInput.value = hoy;
+  fechaInput.disabled = true;
   document.getElementById('modal-asignar').style.display = 'flex';
 }
 
