@@ -857,9 +857,9 @@
       </div>
       <div class="filtros-estado" id="chips-filtro">
         <button class="btn-filtro" data-filtro="PENDIENTE" onclick="toggleFiltroEstado(this,'PENDIENTE')">⏳ Pendientes</button>
+        <button class="btn-filtro" data-filtro="ASIGNADO" onclick="toggleFiltroEstado(this,'ASIGNADO')">👤 Asignados</button>
         <button class="btn-filtro" data-filtro="INICIADO"  onclick="toggleFiltroEstado(this,'INICIADO')">🔄 Iniciados</button>
         <button class="btn-filtro" data-filtro="COMPLETADO" onclick="toggleFiltroEstado(this,'COMPLETADO')">✅ Completados</button>
-        <button class="btn-filtro" data-filtro="RURAL" onclick="toggleFiltroRural(this)">🌾 Rural</button>
       </div>
       <div class="card-titulo" style="margin-top:10px;margin-bottom:8px;">Comuna</div>
       <div class="filtros-comunas" id="chips-comunas">
@@ -2079,19 +2079,6 @@ function toggleFiltroComuna(btn, comuna) {
   } else {
     ST.filtroComunas.splice(idx, 1);
     btn.classList.remove('activo-comuna');
-  }
-  aplicarFiltros();
-}
-
-// ── Toggle filtro RURAL ─────────────────────────────────────────────
-function toggleFiltroRural(btn) {
-  // El filtro RURAL busca barrios/veredas que comiencen con "Vda."
-  if (!ST._filtroRural) {
-    ST._filtroRural = true;
-    btn.classList.add('activo-pendiente');
-  } else {
-    ST._filtroRural = false;
-    btn.classList.remove('activo-pendiente', 'activo-iniciado', 'activo-completado');
   }
   aplicarFiltros();
 }
@@ -5811,7 +5798,7 @@ function renderGestionIniciados(filas) {
   if (!cont) return;
   const iniciados = filas.filter(f => {
     const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
-    return est === 'INICIADO' || est === 'ASIGNADO';
+    return est === 'INICIADO';
   }).sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
   if (!iniciados.length) { cont.innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">No hay registros iniciados pendientes de completar.</p>'; return; }
   cont.innerHTML = iniciados.map(f => {
@@ -5828,7 +5815,16 @@ function renderGestionIniciados(filas) {
         <div style="font-size:13px;color:var(--texto-suave);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
         <div style="font-size:12px;color:var(--texto-suave);margin-top:4px;">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asignado: ' + fAsig : ''}</div>
       </div>
-      <button class="btn-principal" style="padding:8px 16px;font-size:12px;background:var(--brand-accent);color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;font-weight:600;" onclick="abrirModalAsignarIniciado(${filaSheets},'${rad.replace(/'/g,"\\'")}','${dir.replace(/'/g,"\\'")}')">→ Asignar</button>
+      <div style="position:relative;flex-shrink:0;">
+        <button style="padding:6px 12px;font-size:11px;background:var(--brand-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="mostrarDropdownAsignar(event,${filaSheets})">⤵ Asignar</button>
+        <div id="dropdown-asignar-${filaSheets}" style="display:none;position:absolute;top:100%;right:0;background:#fff;border:1px solid var(--borde);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;min-width:140px;margin-top:4px;">
+          <div style="padding:6px 0;">
+            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'ALEJANDRO HERNANDEZ')">👤 Alejandro</button>
+            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'MAURICIO HERRERA')">👤 Mauricio</button>
+            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'DANIEL PEDRAZA')">👤 Daniel</button>
+          </div>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -5859,6 +5855,46 @@ function renderGestionAsignados(filas) {
 }
 
 let _asignarFila = null;
+
+function mostrarDropdownAsignar(event, filaSheets) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('dropdown-asignar-' + filaSheets);
+  if (!dropdown) return;
+  // Cerrar otros dropdowns
+  document.querySelectorAll('[id^="dropdown-asignar-"]').forEach(d => {
+    if (d.id !== 'dropdown-asignar-' + filaSheets) d.style.display = 'none';
+  });
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function asignarInspector(filaSheets, nombre) {
+  const fecha = new Date().toLocaleDateString('es-CO');
+  const url = CFG.webhook + '?accion=asignarVisita&fila=' + filaSheets + 
+              '&inspector=' + encodeURIComponent(nombre) + 
+              '&fecha=' + encodeURIComponent(fecha);
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        notif('Asignado a ' + nombre, 'ok');
+        cerrarDropdownAsignar();
+        cargarGestion();
+      } else {
+        notif('Error al asignar', 'error');
+      }
+    })
+    .catch(() => notif('Error de conexión', 'error'));
+}
+
+function cerrarDropdownAsignar() {
+  document.querySelectorAll('[id^="dropdown-asignar-"]').forEach(d => d.style.display = 'none');
+}
+
+// Cerrar dropdown si hace clic afuera
+document.addEventListener('click', () => {
+  cerrarDropdownAsignar();
+});
+
 function abrirModalAsignar(filaSheets, rad, dir) {
   _asignarFila = filaSheets;
   document.getElementById('modal-asignar-titulo').textContent = 'Asignar ' + rad;
