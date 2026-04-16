@@ -1596,28 +1596,27 @@
 
   <!-- PANTALLA GESTIÓN (solo ADMIN) -->
   <div id="pantalla-gestion" class="pantalla pad-bottom">
+    <div class="page-title" style="margin-bottom:16px;">Gestión</div>
+
+    <!-- Buscador principal -->
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-titulo">📋 Asignar Radicados</div>
-      <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px;">Radicados en estado <strong>PQR PENDIENTE</strong> listos para asignar</p>
-      <input type="text" id="gestion-buscar" class="input-campo" placeholder="Buscar por radicado o dirección..." oninput="filtrarGestion()" style="margin-bottom:12px;">
-      <div id="gestion-lista-pendientes" style="display:flex; flex-direction:column; gap:8px;">
-        <p style="color:var(--texto-suave); font-size:13px;">Cargando...</p>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="gestion-buscar" class="input-campo" placeholder="Buscar radicado o dirección..." style="flex:1;" oninput="filtrarGestion()">
+        <button class="btn-sm brand" onclick="filtrarGestion()" style="flex-shrink:0;">🔍</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn-filtro" id="gf-pendiente" onclick="toggleGestionFiltro('PENDIENTE',this)" style="font-size:11px;padding:5px 10px;">⏳ Pendientes</button>
+        <button class="btn-filtro" id="gf-asignado" onclick="toggleGestionFiltro('ASIGNADO',this)" style="font-size:11px;padding:5px 10px;">👤 Asignados</button>
+        <button class="btn-filtro" id="gf-iniciado" onclick="toggleGestionFiltro('INICIADO',this)" style="font-size:11px;padding:5px 10px;">🔄 Iniciados</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-titulo">✅ Marcar como Completado</div>
-      <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px;">Registros en estado <strong>INICIADO</strong> listos para completar</p>
-      <div id="gestion-lista-iniciados" style="display:flex; flex-direction:column; gap:8px;">
-        <p style="color:var(--texto-suave); font-size:13px;">Cargando...</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-titulo">👤 Registros Asignados</div>
-      <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px;">Registros en estado <strong>ASIGNADO</strong> - en espera de visita</p>
-      <div id="gestion-lista-asignados" style="display:flex; flex-direction:column; gap:8px;">
-        <p style="color:var(--texto-suave); font-size:13px;">Cargando...</p>
+    <!-- Resultados -->
+    <div id="gestion-resultados">
+      <div style="text-align:center;padding:40px 20px;color:var(--texto-suave);">
+        <div style="font-size:32px;margin-bottom:12px;">🔍</div>
+        <div style="font-size:14px;font-weight:500;">Busca un radicado o filtra por estado</div>
+        <div style="font-size:12px;margin-top:4px;">Escribe en el buscador o toca un filtro</div>
       </div>
     </div>
   </div>
@@ -1629,12 +1628,12 @@
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;" id="modal-asignar-dir"></div>
       <label style="font-size:12px; color:var(--texto-suave);">Inspector asignado</label>
       <select id="modal-asignar-inspector" class="input-campo" style="margin:6px 0 16px;">
-        <option value="Alejandro">Alejandro</option>
-        <option value="Mauricio">Mauricio</option>
-        <option value="Daniel">Daniel</option>
+        <option value="ALEJANDRO HERNANDEZ">Alejandro Hernández</option>
+        <option value="MAURICIO HERRERA">Mauricio Herrera</option>
+        <option value="DANIEL PEDRAZA">Daniel Pedraza</option>
       </select>
-      <label style="font-size:12px; color:var(--texto-suave);">Fecha de asignación</label>
-      <input type="date" id="modal-asignar-fecha" class="input-campo" style="margin:6px 0 16px;">
+      <!-- Fecha oculta: siempre se usa hoy -->
+      <input type="hidden" id="modal-asignar-fecha">
       <div style="display:flex; gap:8px;">
         <button class="btn-principal gris" onclick="cerrarModalAsignar()" style="flex:1;">Cancelar</button>
         <button class="btn-principal verde" onclick="confirmarAsignar()" style="flex:1;">Asignar</button>
@@ -1679,6 +1678,7 @@ let ST = {
   filtrosEstado: [],   // array de estados activos, ej: ['PENDIENTE','COMPLETADO']
   filtroComunas: [],   // array de comunas activas, ej: ['2','5']
   filtrosVisitador: [], // array de visitadores activos — solo ADMIN
+  _filtroRural: false,  // filtro rural activo
   gpsLat: null,
   gpsLon: null,
   filaEditando: null,
@@ -1690,9 +1690,6 @@ let ST = {
   _idCarpetaFotos: null,
   _linkCarpetaDrive: null,
   _cargosUsuarios: {},
-  _fotosSubidas: false,
-  _actaGenerada: false,
-  _informeGenerado: false,
   _fotosSubidas: false,
   _actaGenerada: false,
   _informeGenerado: false,
@@ -2006,10 +2003,10 @@ function normalizarEstado(raw) {
 
 // ── Aplicar filtros combinados y re-renderizar ────────────────────────────
 function aplicarFiltros() {
-  const tieneEstado = Object.values(ST._filtrosEstado).some(x => x);
-  const tieneComuna = Object.values(ST._filtrosComuna).some(x => x);
-  const tieneVisitador = ST._filtroVisitador.length > 0;
-  const tieneRural = ST._filtroRural;
+  const tieneEstado = ST.filtrosEstado.length > 0;
+  const tieneComuna = ST.filtroComunas.length > 0;
+  const tieneVisitador = ST.filtrosVisitador.length > 0;
+  const tieneRural = !!ST._filtroRural;
 
   const filtrados = ST.datos
     .map(f => ({ f, i: f._idx }))
@@ -2093,12 +2090,13 @@ function toggleFiltroRural(btn) {
   }
   aplicarFiltros();
 }
-  
+
 // ── Limpiar todos los filtros ─────────────────────────────────────────────
 function limpiarFiltros() {
   ST.filtrosEstado = [];
   ST.filtroComunas = [];
   ST.filtrosVisitador = [];
+  ST._filtroRural = false;
   document.querySelectorAll('#chips-filtro .btn-filtro').forEach(b => {
     b.classList.remove('activo-pendiente', 'activo-iniciado', 'activo-completado');
   });
@@ -2110,8 +2108,10 @@ function limpiarFiltros() {
   });
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   if (btnLimpiar) {
-    btnLimpiar.classList.toggle('visible', tieneEstado || tieneComuna || tieneVisitador || tieneRural);
+    btnLimpiar.classList.remove('visible');
   }
+  aplicarFiltros();
+}
 
 // ── Poblar chips de comunas dinámicamente ────────────────────────────────
 function poblarChipsComunas(datos) {
@@ -2324,9 +2324,6 @@ function prepararFormulario(fila, filaIdx) {
     ST._fotosSubidas = false;
     ST._actaGenerada = false;
     ST._informeGenerado = false;
-    ST._fotosSubidas = false;
-    ST._actaGenerada = false;
-    ST._informeGenerado = false;
     // Ocultar panel de estado
     const panelEstado = document.getElementById('panel-estado-registro');
     if (panelEstado) panelEstado.style.display = 'none';
@@ -2335,6 +2332,13 @@ function prepararFormulario(fila, filaIdx) {
     if (secFotos) secFotos.style.display = 'none';
     const bloqueSubirNew = document.getElementById('bloque-subir-fotos');
     if (bloqueSubirNew) bloqueSubirNew.style.display = 'block';
+    // Restaurar visibilidad del toggle PQR/Oficio (puede haberse ocultado al editar un PENDIENTE)
+    const rgOficioEl = document.getElementById('rg-oficio');
+    if (rgOficioEl) {
+      rgOficioEl.style.display = '';
+      rgOficioEl.style.pointerEvents = '';
+      rgOficioEl.style.opacity = '';
+    }
     selRadVal('rg-oficio', 'NO');
     toggleOficio('NO');
     desbloquearCamposVisita();
@@ -2349,15 +2353,11 @@ function prepararFormulario(fila, filaIdx) {
     document.getElementById('f-citacion-hora').value = '';
     document.getElementById('transcripcion').value = '';
     // Características edificación
-    
     toggleSuspensionPorEstado('En proceso / iniciada');
-    
-    
     document.getElementById('f-altura-pisos').value = '';
     document.getElementById('f-dest-actuales').value = '';
     resetChipsUsosCubierta();
     // Verificación documental
-    
     toggleLicencia('NO');
     document.getElementById('f-fecha-licencia').value = '';
     document.getElementById('f-tipo-licencia').value = '';
@@ -2371,43 +2371,21 @@ function prepararFormulario(fila, filaIdx) {
     // Limpiar amenaza, suelo protección y quebrada (sin selección por defecto)
     document.querySelectorAll('#rg-amenaza .radio-opcion, #rg-suelo-prot .radio-opcion, #rg-quebrada .radio-opcion').forEach(r => r.classList.remove('sel','sel-verde','sel-rojo'));
     toggleOrden('SI');
-    // Norma POT
-    
-    
     // Limpiar chips infracción y visitadores
     document.querySelectorAll('#chips-infraccion .chip-inf').forEach(c => c.classList.remove('activo'));
     document.getElementById('f-infraccion').value = '';
     document.querySelectorAll('#chips-visitador .chip-vis').forEach(c => c.classList.remove('activo'));
     document.getElementById('f-visitador').value = '';
-    // Suspensión por defecto = SI → mostrar orden
-    toggleOrden('SI');
-    // Limpiar campos nuevos
+    // Limpiar campos persona que atiende
     document.getElementById('f-atiende-nombre').value = '';
     document.getElementById('f-atiende-id').value = '';
     document.getElementById('f-atiende-tel').value = '';
     document.getElementById('f-atiende-dir').value = '';
     document.getElementById('f-atiende-email').value = '';
-    document.getElementById('f-fecha-licencia').value = '';
-    document.getElementById('f-tipo-licencia').value = '';
-    document.getElementById('f-pisos').value = '';
-    document.getElementById('f-destinaciones').value = '';
-    document.getElementById('f-cubierta').value = '';
-    document.getElementById('f-sistema').value = '';
-    document.getElementById('f-obs-licencia').value = '';
-    document.getElementById('f-altura-pisos').value = '';
-    document.getElementById('f-dest-actuales').value = '';
-    resetChipsUsosCubierta();
+    // Norma POT
     document.getElementById('f-catastral').value = '';
     document.getElementById('f-ficha').value = '';
     document.getElementById('f-poligono').value = '';
-    
-    
-    
-    
-    
-    
-    
-    toggleLicencia('NO');
   } else {
     // Editar — cargar TODOS los datos con índices correctos
     ST.filaEditando = filaIdx;
@@ -2463,7 +2441,7 @@ function prepararFormulario(fila, filaIdx) {
     document.getElementById('f-barrio').value = fila['BARRIO/VEREDA'] || celda(fila, 4);
 
     // GPS [48]=AW:LATITUD [49]=AX:LONGITUD
-    if (fila['LATITUD'] || celda(fila, 48) && fila['LONGITUD'] || celda(fila, 49)) {
+    if ((fila['LATITUD'] || celda(fila, 48)) && (fila['LONGITUD'] || celda(fila, 49))) {
       ST.gpsLat = parseFloat(fila['LATITUD'] || celda(fila, 48));
       ST.gpsLon = parseFloat(fila['LONGITUD'] || celda(fila, 49));
       const latVal = fila['LATITUD'] || celda(fila, 48) || '';
@@ -2605,8 +2583,14 @@ function nuevaVisitaDesde(radicado, indices) {
   setNav('nav-nueva');
   prepararFormulario(null);
   document.getElementById('f-radicado').value = radicado;
-  document.getElementById('info-form').textContent = `Visita adicional · ${radicado}`;
-  document.getElementById('f-nvisita').value = indices.length + 1;
+  ST.nVisita = indices.length + 1;
+  const infoDiv = document.getElementById('info-nvisita');
+  if (infoDiv) {
+    infoDiv.textContent = 'Visita adicional N°' + ST.nVisita + ' · ' + radicado;
+    infoDiv.style.display = 'block';
+    infoDiv.style.background = 'var(--verde-bg)';
+    infoDiv.style.color = 'var(--verde)';
+  }
 }
 
 async function guardarRegistro() {
@@ -3083,34 +3067,26 @@ async function mejorarRedaccion() {
   btn.textContent = '⏳ Mejorando...';
   showLoading('Mejorando redacción...', 'Claude AI está procesando el texto');
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CFG.claudeKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-20250805',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `Mejora esta descripción de inspección urbanística manteniendo todos los hechos. Usa lenguaje técnico formal, sin puntos suspensivos. Máximo 1460 caracteres:\n\n"${texto}"`
-        }]
-      })
-    });
-    const data = await response.json();
-    if (data.error) {
-      notif('Error Claude: ' + data.error.message, 'error');
-      return;
+    const prompt = `Mejora esta descripción de inspección urbanística manteniendo todos los hechos. Usa lenguaje técnico formal, sin puntos suspensivos. Máximo 1460 caracteres:\n\n"${texto}"`;
+    const r = await fetch(CFG.webhook + '?accion=mejorarTexto&texto=' + encodeURIComponent(prompt));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const raw = await r.text();
+    let data;
+    try { data = JSON.parse(raw); } catch(e) {
+      console.error('Respuesta no-JSON de webhook:', raw.substring(0, 500));
+      throw new Error('Webhook respondió sin JSON válido');
     }
-    const textMejorado = (data.content[0]?.text || '').trim();
+    // Buscar el texto en múltiples campos posibles que devuelva el Apps Script
+    const textMejorado = (data.texto || data.resultado || data.text || data.mejorado || data.response || '').trim();
+    console.log('Respuesta webhook mejorarTexto:', data);
     if (textMejorado) {
       hideLoading();
       const conf = confirm(`TEXTO MEJORADO:\n\n${textMejorado}\n\n¿Reemplazar el texto original?`);
       if (conf) textarea.value = textMejorado;
+    } else if (data.error) {
+      notif('Error del servidor: ' + data.error, 'error');
     } else {
-      notif('No se pudo mejorar el texto', 'error');
+      notif('Respuesta vacía del servidor. Revisa consola.', 'error');
     }
   } catch(e) {
     notif('Error al mejorar: ' + e.message, 'error');
@@ -3445,16 +3421,9 @@ async function verificarRadicado() {
   document.getElementById('f-fecha-radicado').value = '';
   document.getElementById('grupo-fecha-radicado').style.display = 'none';
   document.getElementById('info-nvisita').style.display = 'none';
-  
-  
-  
-  
   toggleLicencia('NO');
   selRadVal('rg-quebrada', 'PENDIENTE VERIFICAR');
-  
   toggleOrden('SI');
-  
-  
   toggleSuspensionPorEstado('En proceso / iniciada');
 
   notif('Verificando...', 'carga');
@@ -3482,18 +3451,20 @@ async function verificarRadicado() {
       const primera = coincidencias[0];
 
       // 1. Autocargar ubicación (bloqueada — viene de visita anterior)
-      document.getElementById('f-direccion').value = primera['DIRECCION INFRACCION'] || primera[2] || '';
+      document.getElementById('f-direccion').value = primera['DIRECCION INFRACCION'] || primera[3] || '';
       document.getElementById('f-direccion').readOnly = true;
       document.getElementById('f-direccion').style.background = 'var(--gris-bg)';
-      document.getElementById('f-barrio').value = primera['BARRIO/VEREDA'] || primera[3] || '';
+      document.getElementById('f-barrio').value = primera['BARRIO/VEREDA'] || primera[4] || '';
       document.getElementById('f-barrio').disabled = true;
       document.getElementById('f-barrio').style.background = 'var(--gris-bg)';
 
-      // GPS de la visita anterior si existe
-      if (ultima['LATITUD'] || ultima[26] || '' && ultima['LONGITUD'] || ultima[27] || '') {
-        ST.gpsLat = parseFloat(ultima['LATITUD'] || ultima[26] || '');
-        ST.gpsLon = parseFloat(ultima['LONGITUD'] || ultima[27] || '');
-        document.getElementById('gps-coords').textContent = ultima['LATITUD'] || ultima[26] || '' + ', ' + ultima['LONGITUD'] || ultima[27] || '';
+      // GPS de la visita anterior si existe — cols AW=48 AX=49
+      const latAnterior = ultima['LATITUD'] || ultima[48] || '';
+      const lonAnterior = ultima['LONGITUD'] || ultima[49] || '';
+      if (latAnterior && lonAnterior) {
+        ST.gpsLat = parseFloat(latAnterior);
+        ST.gpsLon = parseFloat(lonAnterior);
+        document.getElementById('gps-coords').textContent = latAnterior + ', ' + lonAnterior;
         document.getElementById('gps-dir').textContent = 'Ubicación de visita anterior';
         document.getElementById('btn-mapa').style.display = 'inline-flex';
       }
@@ -3502,18 +3473,22 @@ async function verificarRadicado() {
       const catastral = document.getElementById('f-catastral');
       const ficha = document.getElementById('f-ficha');
       const poligono = document.getElementById('f-poligono');
-      // Columnas AY=50, AZ=51, BA=52 (índices 0-based desde fila datos)
-      if (ultima['CODIGO CATASTRAL'] || ultima[50] || '') { catastral.value = ultima['CODIGO CATASTRAL'] || ultima[50] || ''; catastral.readOnly = true; catastral.style.background = 'var(--gris-bg)'; }
-      if (ultima['N° FICHA PREDIAL'] || ultima[51] || '') { ficha.value = ultima['N° FICHA PREDIAL'] || ultima[51] || ''; ficha.readOnly = true; ficha.style.background = 'var(--gris-bg)'; }
-      if (ultima['POLIGONO USO SUELO'] || ultima[52] || '') { poligono.value = ultima['POLIGONO USO SUELO'] || ultima[52] || ''; poligono.readOnly = true; poligono.style.background = 'var(--gris-bg)'; }
+      // Columnas: AG=32 CATASTRAL, AH=33 FICHA, AZ=51 POLIGONO
+      const catVal = ultima['CODIGO CATASTRAL'] || ultima[32] || '';
+      const ficVal = ultima['N FICHA PREDIAL'] || ultima['N° FICHA PREDIAL'] || ultima[33] || '';
+      const polVal = ultima['POLIGONO USO SUELO'] || ultima[51] || '';
+      if (catastral && catVal) { catastral.value = catVal; catastral.readOnly = true; catastral.style.background = 'var(--gris-bg)'; }
+      if (ficha && ficVal) { ficha.value = ficVal; ficha.readOnly = true; ficha.style.background = 'var(--gris-bg)'; }
+      if (poligono && polVal) { poligono.value = polVal; poligono.readOnly = true; poligono.style.background = 'var(--gris-bg)'; }
 
       // 3. Mostrar persona que atendió en visita anterior
-      const nombreAnterior = ultima['NOMBRE PERSONA ATIENDE'] || ultima[29] || '';  // AD
-      const idAnterior = ultima['ID PERSONA ATIENDE'] || ultima[30] || '';      // AE
-      const telAnterior = ultima['TELEFONO PERSONA ATIENDE'] || ultima[31] || '';     // AF
-      const relAnterior = ultima['RELACION CON EL EVENTO'] || ultima[32] || '';     // AG
-      const dirAnterior = ultima['DIR NOTIFICACION'] || ultima[33] || '';     // AH
-      const emailAnterior = ultima['CORREO ELECTRONICO'] || ultima[34] || '';   // AI
+      // Columnas: H=7 I=8 J=9 K=10 L=11 M=12
+      const nombreAnterior = ultima['NOMBRE PERSONA ATIENDE'] || ultima[7] || '';
+      const idAnterior = ultima['ID PERSONA ATIENDE'] || ultima[8] || '';
+      const telAnterior = ultima['TELEFONO PERSONA ATIENDE'] || ultima[9] || '';
+      const relAnterior = ultima['RELACION CON EL EVENTO'] || ultima[10] || '';
+      const dirAnterior = ultima['DIR NOTIFICACION'] || ultima[11] || '';
+      const emailAnterior = ultima['CORREO ELECTRONICO'] || ultima[12] || '';
 
       if (nombreAnterior && nVisita > 1) {
         // Solo mostrar datos bloqueados cuando es visita 3+ (hay una visita anterior con persona)
@@ -3532,8 +3507,11 @@ async function verificarRadicado() {
       }
 
       // Info visita
-      // Arrastrar fecha de radicado de la primera visita
-      document.getElementById('f-fecha-radicado').value = primera['FECHA RADICADO'] || primera[1] || '';
+      // Arrastrar fecha de radicado de la primera visita (col C = índice 2)
+      document.getElementById('f-fecha-radicado').value = primera['FECHA RADICADO'] || primera[2] || '';
+      // Fecha de visita por defecto = hoy (si no la tiene)
+      const fvInput = document.getElementById('f-fecha-visita');
+      if (fvInput && !fvInput.value) fvInput.value = new Date().toISOString().split('T')[0];
 
       infoDiv.style.display = 'block';
       infoDiv.textContent = '✓ Radicado encontrado — Visita N°' + nVisita + ' · Datos autocargados de visita anterior';
@@ -4199,9 +4177,6 @@ function toggleOficio(val) {
     selRadVal('rg-rep-locativa', 'NO');
     const grupoRepLoc = document.getElementById('grupo-rep-locativa');
     if (grupoRepLoc) grupoRepLoc.style.display = 'none';
-    // Oficio: citación obligatoria sin checkbox
-    const spanCit = document.getElementById('span-citacion-checkbox');
-    if (spanCit) spanCit.style.display = 'none';
     // Resetear checkbox por si venía marcado
     const chkCit = document.getElementById('citacion-no-aplica');
     if (chkCit) { chkCit.checked = false; }
@@ -4230,9 +4205,6 @@ function toggleOficio(val) {
     // Restaurar "Sin infracción" en PQR
     const chipSinInfPqr = document.getElementById('chip-sin-infraccion');
     if (chipSinInfPqr) chipSinInfPqr.style.display = '';
-    // Restaurar checkbox citación
-    const spanCitPqr = document.getElementById('span-citacion-checkbox');
-    if (spanCitPqr) spanCitPqr.style.display = 'inline';
   }
 }
 
@@ -4353,423 +4325,6 @@ function toggleOrden(val) {
 }
 
 
-function generarF46(datos) {
-  const logo = "data:image/jpeg;base64,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";
-  
-  const d = datos;
-  const fechaVisita = d.fechaVisita || '';
-  const radicado = d.radicado || '';
-  const fechaRadicado = d.fechaRadicado || '';
-  const direccion = d.direccion || '';
-  const barrio = d.barrio || '';
-  const atiendeNombre = d.atiendeNombre || '';
-  const atiendeId = d.atiendeId || '';
-  const atiendeTel = d.atiendeTel || '';
-  const atiendeRelacion = d.atiendeRelacion || '';
-  const atiendeDir = d.atiendeDir || '';
-  const atiendeEmail = d.atiendeEmail || '';
-  const licenciaAportada = d.licenciaAportada || 'NO';
-  const licenciaN = d.licenciaN || '';
-  const licenciaFecha = d.licenciaFecha || '';
-  const licenciaTipo = d.licenciaTipo || '';
-  const licenciaPisos = d.licenciaPisos || '';
-  const licenciaDest = d.licenciaDest || '';
-  const licenciaCubierta = d.licenciaCubierta || '';
-  const licenciaSistema = d.licenciaSistema || '';
-  const licenciaObs = d.licenciaObs || '';
-  const estadoObra = d.estadoObra || '';
-  const repLocativa = d.repLocativa || '';
-  const habitado = d.habitado || '';
-  const alturaP = d.alturaP || '';
-  const destActuales = d.destActuales || '';
-  const usos = d.usos || '';
-  const cubiertalActual = d.cubiertalActual || '';
-  const situacion = d.situacion || '';
-  const catastral = d.catastral || '';
-  const ficha = d.ficha || '';
-  const poligono = d.poligono || '';
-  const amenaza = d.amenaza || '';
-  const sueloProt = d.sueloProt || '';
-  const infraccion = d.infraccion || '';
-  const area = d.area || '';
-  const suspension = d.suspension || '';
-  const orden = d.orden || '';
-  const citacion = d.citacion || '';
-  const visitadores = d.visitadores || [];
-  const nVisita = d.nVisita || '1';
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>F-GGO-46 - ${radicado}</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: Arial, sans-serif; font-size: 7.5pt; color: #000; background: #fff; }
-  @page { size: letter portrait; margin: 1cm 1cm 1cm 1cm; }
-  @media print { body { margin:0; } .no-print { display:none; } }
-  
-  .acta { width: 100%; border-collapse: collapse; }
-  .acta td { border: 0.5pt solid #000; padding: 1.5pt 2pt; vertical-align: top; }
-  .acta td.nb { border: none; }
-  .acta td.bt { border-top: 0.5pt solid #000; border-bottom: 0.5pt solid #000; border-left: none; border-right: none; }
-  
-  .header-inst { border: 1pt solid #000; width: 100%; border-collapse: collapse; margin-bottom: 0; }
-  .header-inst td { border: 0.5pt solid #000; padding: 2pt; vertical-align: middle; }
-  
-  .lbl { font-weight: bold; font-size: 6.5pt; text-transform: uppercase; }
-  .val { font-size: 7.5pt; border-bottom: 0.3pt solid #555; min-height: 10pt; display: inline-block; width: 100%; }
-  .seccion { background-color: #D9D9D9; font-weight: bold; font-size: 7.5pt; text-align: center; padding: 2pt; border: 0.5pt solid #000; }
-  .campo { border: 0.5pt solid #000; padding: 1.5pt 2pt; }
-  .check { font-size: 8pt; }
-  .firma-box { border-top: 0.5pt solid #000; margin-top: 20pt; width: 100%; }
-  
-  .btn-imprimir { position: fixed; bottom: 20px; right: 20px; background: #1F3864; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-  .btn-cerrar { position: fixed; bottom: 20px; right: 150px; background: #666; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; z-index: 999; }
-</style>
-</head>
-<body>
-
-<button class="btn-imprimir no-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
-<button class="btn-cerrar no-print" onclick="window.close()">✕ Cerrar</button>
-
-<!-- ENCABEZADO INSTITUCIONAL -->
-<table class="header-inst" style="margin-bottom:2pt;">
-  <tr>
-    <td rowspan="3" style="width:60pt; text-align:center; border:0.5pt solid #000;">
-      <img src="${logo}" style="height:50pt; width:auto;">
-    </td>
-    <td colspan="2" style="text-align:center; font-weight:bold; font-size:8pt; border:0.5pt solid #000;">
-      MUNICIPIO DE BELLO – SECRETARÍA DE SEGURIDAD Y CONVIVENCIA CIUDADANA
-    </td>
-    <td style="text-align:center; font-size:6.5pt; border:0.5pt solid #000;">
-      <b>Código:</b> F-GGO-46<br>
-      <b>Versión:</b> 01<br>
-      <b>Vigencia:</b> 2023
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2" style="text-align:center; font-weight:bold; font-size:9pt; border:0.5pt solid #000;">
-      ACTA DE INSPECCIÓN OCULAR – CARACTERIZACIÓN DE LA INTERVENCIÓN
-    </td>
-    <td style="text-align:center; font-size:6.5pt; border:0.5pt solid #000;">
-      <b>Visita N°:</b> ${nVisita}
-    </td>
-  </tr>
-  <tr>
-    <td colspan="3" style="text-align:center; font-size:7pt; border:0.5pt solid #000;">
-      Inspección N°9 de Convivencia con Funciones de Control Urbano
-    </td>
-  </tr>
-</table>
-
-<!-- DATOS GENERALES -->
-<table class="acta" style="width:100%;">
-  <tr>
-    <td colspan="14" class="seccion">DATOS GENERALES</td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">Fecha de visita:</span><br>
-      <span class="val">${fechaVisita}</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Radicado:</span><br>
-      <span class="val">${radicado}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo" style="height:8pt;">
-      <span class="lbl">Objeto de la visita:</span>
-      <span class="val">Verificación de construcción e intervención urbanística</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Fecha radicado:</span><br>
-      <span class="val">${fechaRadicado}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">Dirección del inmueble:</span><br>
-      <span class="val">${direccion}</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Barrio:</span><br>
-      <span class="val">${barrio}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">Nombre de la persona que atiende:</span><br>
-      <span class="val">${atiendeNombre}</span>
-    </td>
-    <td colspan="4" class="campo">
-      <span class="lbl">N° Identificación:</span><br>
-      <span class="val">${atiendeId}</span>
-    </td>
-    <td colspan="3" class="campo">
-      <span class="lbl">Teléfono:</span><br>
-      <span class="val">${atiendeTel}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">Dirección notificación:</span><br>
-      <span class="val">${atiendeDir}</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Relación con el evento:</span><br>
-      <span class="val">${atiendeRelacion}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="14" class="campo">
-      <span class="lbl">Correo electrónico:</span>
-      <span class="val">${atiendeEmail}</span>
-    </td>
-  </tr>
-
-  <!-- VERIFICACIÓN DOCUMENTAL -->
-  <tr>
-    <td colspan="14" class="campo" style="font-size:7.5pt;">
-      <b>VERIFICACIÓN DOCUMENTAL</b> &nbsp;&nbsp; Se aporta licencia:
-      &nbsp;<b>${licenciaAportada === 'SI' ? '☑ Sí' : '☐ Sí'}</b>
-      &nbsp;&nbsp;
-      <b>${licenciaAportada === 'NO' ? '☑ No' : '☐ No'}</b>
-    </td>
-  </tr>
-  ${licenciaAportada === 'SI' ? `
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">N° de licencia:</span><br>
-      <span class="val">${licenciaN}</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Fecha licencia:</span><br>
-      <span class="val">${licenciaFecha}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="14" class="campo">
-      <span class="lbl">Tipo de licencia y modalidad:</span><br>
-      <span class="val">${licenciaTipo}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="3" class="campo">
-      <span class="lbl">N° Pisos:</span><br>
-      <span class="val">${licenciaPisos}</span>
-    </td>
-    <td colspan="5" class="campo">
-      <span class="lbl">N° Destinaciones y usos:</span><br>
-      <span class="val">${licenciaDest}</span>
-    </td>
-    <td colspan="3" class="campo">
-      <span class="lbl">Tipo cubierta:</span><br>
-      <span class="val">${licenciaCubierta}</span>
-    </td>
-    <td colspan="3" class="campo">
-      <span class="lbl">Sistema estructural:</span><br>
-      <span class="val">${licenciaSistema}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="14" class="campo" style="height:30pt;">
-      <span class="lbl">Observaciones:</span><br>
-      <span class="val">${licenciaObs}</span>
-    </td>
-  </tr>
-  ` : '<tr><td colspan="14" class="campo" style="height:8pt; font-size:7pt; color:#666;">No se aportó documentación urbanística.</td></tr>'}
-
-  <!-- CARACTERÍSTICAS ACTUALES -->
-  <tr>
-    <td colspan="14" class="seccion">CARACTERÍSTICAS ACTUALES DE LA EDIFICACIÓN</td>
-  </tr>
-  <tr>
-    <td colspan="3" class="campo"><span class="lbl">Estado obra:</span><br>
-      <span style="font-size:7pt;">
-        ${estadoObra.includes('proceso') ? '☑ En proceso / iniciada &nbsp; ☐ Terminada' : '☐ En proceso / iniciada &nbsp; ☑ Terminada'}
-      </span>
-    </td>
-    <td colspan="5" class="campo"><span class="lbl">¿Reparación locativa?</span><br>
-      ${repLocativa === 'SI' ? '☑ Sí &nbsp; ☐ No' : '☐ Sí &nbsp; ☑ No'}
-    </td>
-    <td colspan="3" class="campo"><span class="lbl">¿Habitado?</span><br>
-      ${habitado === 'SI' ? '☑ Sí &nbsp; ☐ No' : '☐ Sí &nbsp; ☑ No'}
-    </td>
-    <td colspan="3" class="campo"><span class="lbl">Altura en pisos:</span><br>
-      <span class="val">${alturaP}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="3" class="campo"><span class="lbl">N° Destinaciones:</span><br>
-      <span class="val">${destActuales}</span>
-    </td>
-    <td colspan="5" class="campo"><span class="lbl">Usos:</span><br>
-      <span class="val">${usos}</span>
-    </td>
-    <td colspan="6" class="campo"><span class="lbl">Tipo de cubierta:</span><br>
-      <span class="val">${cubiertalActual}</span>
-    </td>
-  </tr>
-
-  <!-- SITUACIÓN ENCONTRADA -->
-  <tr>
-    <td colspan="14" class="seccion">SITUACIÓN ENCONTRADA</td>
-  </tr>
-  <tr>
-    <td colspan="14" class="campo" style="height:80pt; vertical-align:top;">
-      ${situacion}
-    </td>
-  </tr>
-
-  <!-- CONSULTA NORMA -->
-  <tr>
-    <td colspan="14" class="seccion">CONSULTA NORMA</td>
-  </tr>
-  <tr>
-    <td colspan="7" class="campo"><span class="lbl">Código catastral:</span><br>
-      <span class="val">${catastral}</span>
-    </td>
-    <td colspan="7" class="campo"><span class="lbl">N° Ficha predial:</span><br>
-      <span class="val">${ficha}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="5" class="campo"><span class="lbl">Polígono uso del suelo:</span><br>
-      <span class="val">${poligono}</span>
-    </td>
-    <td colspan="4" class="campo"><span class="lbl">¿Amenaza?</span><br>
-      ${amenaza === 'SI' ? '☑ Sí &nbsp; ☐ No' : '☐ Sí &nbsp; ☑ No'}
-    </td>
-    <td colspan="5" class="campo"><span class="lbl">¿Suelo de protección?</span><br>
-      ${sueloProt === 'SI' ? '☑ Sí &nbsp; ☐ No' : '☐ Sí &nbsp; ☑ No'}
-    </td>
-  </tr>
-
-  <!-- CONCLUSIONES -->
-  <tr>
-    <td colspan="14" class="seccion">CONCLUSIONES</td>
-  </tr>
-  <tr>
-    <td colspan="14" class="campo" style="font-size:7.5pt;">
-      <b>Comportamiento contrario a la integridad urbanística (Art. 135 Ley 1801/2016):</b><br>
-      <span class="val">${infraccion}</span>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="5" class="campo"><span class="lbl">Área en contravención (m²):</span><br>
-      <span class="val">${area}</span>
-    </td>
-    <td colspan="9" class="campo" style="height:45pt; vertical-align:top;"><span class="lbl">Observaciones:</span><br></td>
-  </tr>
-
-  ${suspension === 'SI' ? `
-  <!-- ORDEN Y CITACIÓN -->
-  <tr>
-    <td colspan="7" class="campo">
-      <span class="lbl">N° Orden de suspensión:</span><br>
-      <span class="val">${orden}</span>
-    </td>
-    <td colspan="7" class="campo">
-      <span class="lbl">Fecha citación (audiencia):</span><br>
-      <span class="val">${citacion}</span>
-    </td>
-  </tr>
-  ` : ''}
-
-  <!-- FUNCIONARIOS -->
-  <tr>
-    <td colspan="14" class="seccion">FUNCIONARIOS QUE REALIZAN LA INSPECCIÓN OCULAR</td>
-  </tr>
-  <tr>
-    <td colspan="5" class="campo" style="font-weight:bold; text-align:center;">NOMBRE</td>
-    <td colspan="5" class="campo" style="font-weight:bold; text-align:center;">CARGO</td>
-    <td colspan="4" class="campo" style="font-weight:bold; text-align:center;">FIRMA</td>
-  </tr>
-  ${visitadores.map(v => {
-    const nomV = (v || '').toUpperCase();
-    let cargoV = ST.cargo;
-    if (ST._cargosUsuarios) {
-      if (ST._cargosUsuarios[nomV]) {
-        cargoV = ST._cargosUsuarios[nomV];
-      } else {
-        const matchK = Object.keys(ST._cargosUsuarios).find(k =>
-          k.includes(nomV) || nomV.includes(k.split(' ')[0] + ' ' + (k.split(' ')[1]||''))
-        );
-        if (matchK) cargoV = ST._cargosUsuarios[matchK];
-      }
-    }
-    return `
-  <tr>
-    <td colspan="5" class="campo" style="height:22pt; vertical-align:top;">${v}</td>
-    <td colspan="5" class="campo" style="height:22pt;">${cargoV}</td>
-    <td colspan="4" class="campo" style="height:22pt;"></td>
-  </tr>
-  `;}).join('')}
-</table>
-
-</body>
-</html>`;
-}
-
-function abrirF46() {
-  const datos = {
-    radicado: ST.esOficio ? document.getElementById('f-orden').value ? 'OFICIO-' + document.getElementById('f-orden').value : '' : document.getElementById('f-radicado').value,
-    fechaVisita: document.getElementById('f-fecha-visita').value,
-    fechaRadicado: document.getElementById('f-fecha-radicado').value,
-    nVisita: ST.nVisita || 1,
-    direccion: document.getElementById('f-direccion').value,
-    barrio: document.getElementById('f-barrio').value,
-    atiendeNombre: document.getElementById('f-atiende-nombre').value,
-    atiendeId: document.getElementById('f-atiende-id').value,
-    atiendeTel: document.getElementById('f-atiende-tel').value,
-    atiendeRelacion: getRadVal('rg-relacion') === 'Otro' ? document.getElementById('f-otro-relacion').value : getRadVal('rg-relacion'),
-    atiendeDir: document.getElementById('f-atiende-dir').value,
-    atiendeEmail: document.getElementById('f-atiende-email').value,
-    licenciaAportada: getRadVal('rg-licencia-aportada'),
-    licenciaN: document.getElementById('f-licencia').value,
-    licenciaFecha: document.getElementById('f-fecha-licencia').value,
-    licenciaTipo: document.getElementById('f-tipo-licencia').value,
-    licenciaPisos: document.getElementById('f-pisos').value,
-    licenciaDest: document.getElementById('f-destinaciones').value,
-    licenciaCubierta: document.getElementById('f-cubierta').value,
-    licenciaSistema: document.getElementById('f-sistema').value,
-    licenciaObs: document.getElementById('f-obs-licencia').value,
-    estadoObra: getRadVal('rg-estado-obra'),
-    repLocativa: getRadVal('rg-rep-locativa'),
-    habitado: getRadVal('rg-habitado'),
-    alturaP: document.getElementById('f-altura-pisos').value,
-    destActuales: document.getElementById('f-dest-actuales').value,
-    usos: document.getElementById('f-usos').value,
-    cubiertalActual: document.getElementById('f-cubierta-actual').value,
-    situacion: document.getElementById('transcripcion').value,
-    catastral: document.getElementById('f-catastral').value,
-    ficha: document.getElementById('f-ficha').value,
-    poligono: document.getElementById('f-poligono').value,
-    amenaza: getRadVal('rg-amenaza'),
-    sueloProt: getRadVal('rg-suelo-prot'),
-    infraccion: document.getElementById('f-infraccion').value,
-    area: document.getElementById('f-area').value,
-    suspension: getRadVal('rg-suspension'),
-    orden: document.getElementById('f-orden').value,
-    citacion: (() => {
-      const cf = document.getElementById('f-citacion-fecha').value;
-      const ch = document.getElementById('f-citacion-hora').value;
-      if (!cf) return '';
-      const horas = {'08:00':'8:00 AM','09:00':'9:00 AM','10:00':'10:00 AM','11:00':'11:00 AM','14:00':'2:00 PM','15:00':'3:00 PM','16:00':'4:00 PM'};
-      return cf + (ch ? ' · ' + (horas[ch] || ch) : '');
-    })(),
-    visitadores: document.getElementById('f-visitador').value.split(' / ').filter(v => v),
-  };
-  const html = generarF46(datos);
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  ST._actaGenerada = true;
-  actualizarPanelEstado();
-}
-
 function irA(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
   document.getElementById(id)?.classList.add('activa');
@@ -4841,8 +4396,7 @@ function hideLoading() {
 // ═══════════════════════════════════════════
 // INICIO
 // ═══════════════════════════════════════════
-function cargarInspectores() {
-  // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
 // FUNCIONES DE ADMINISTRADOR
 // ═══════════════════════════════════════════
 window.cargarUsuariosAdmin = async function() {
@@ -4971,7 +4525,6 @@ window.cargarLog = async function() {
   }
 }
 
-}  // ← AGREGAR ESTA LÍNEA (cierra cargarInspectores)
 
 // ═══════════════════════════════════════════
 // Leer USUARIOS activos para el selector de login
@@ -5716,7 +5269,8 @@ function actualizarCubierta() {
 function resetChipsUsosCubierta() {
   document.querySelectorAll('#chips-usos .chip-inf').forEach(c => c.classList.remove('activo'));
   document.querySelectorAll('#chips-cubierta .chip-inf').forEach(c => c.classList.remove('activo'));
-  resetChipsUsosCubierta();
+  document.getElementById('f-usos').value = '';
+  document.getElementById('f-cubierta-actual').value = '';
   document.getElementById('f-uso-cual').value = '';
   document.getElementById('f-cubierta-cual').value = '';
   document.getElementById('grupo-uso-cual').style.display = 'none';
@@ -5771,114 +5325,139 @@ let _gestionData = [];
 
 async function cargarGestion() {
   if (ST.rol !== 'ADMIN') return;
-  document.getElementById('gestion-lista-pendientes').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
-  document.getElementById('gestion-lista-iniciados').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
-  document.getElementById('gestion-lista-asignados').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
+  const cont = document.getElementById('gestion-resultados');
+  cont.innerHTML = '<div class="cargando"><div class="spinner"></div>Cargando...</div>';
   try {
     const { datos } = await leerHojaConHeaders();
     _gestionData = datos;
-    renderGestionPendientes(_gestionData);
-    renderGestionIniciados(_gestionData);
-    renderGestionAsignados(_gestionData);
+    _gestionFiltroEstado = '';
+    // Mostrar estado vacío
+    cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--texto-suave);"><div style="font-size:32px;margin-bottom:12px;">✅</div><div style="font-size:14px;font-weight:500;">' + datos.length + ' registros cargados</div><div style="font-size:12px;margin-top:4px;">Busca un radicado o filtra por estado</div></div>';
   } catch(e) {
     notif('Error cargando gestión: ' + e.message, 'error');
   }
 }
 
+let _gestionFiltroEstado = '';
+
+function toggleGestionFiltro(estado, btn) {
+  // Toggle: si ya estaba activo, quitar filtro
+  if (_gestionFiltroEstado === estado) {
+    _gestionFiltroEstado = '';
+    btn.classList.remove('activo-pendiente','activo-iniciado','activo-completado');
+  } else {
+    _gestionFiltroEstado = estado;
+    document.querySelectorAll('#gf-pendiente,#gf-asignado,#gf-iniciado').forEach(b => b.classList.remove('activo-pendiente','activo-iniciado','activo-completado'));
+    const claseMap = {'PENDIENTE':'activo-pendiente','ASIGNADO':'activo-iniciado','INICIADO':'activo-completado'};
+    btn.classList.add(claseMap[estado] || 'activo-pendiente');
+  }
+  filtrarGestion();
+}
+
 function filtrarGestion() {
-  const q = (document.getElementById('gestion-buscar')?.value || '').toLowerCase();
-  const filtrado = _gestionData.filter(f => {
-    const rad = (f['RADICADO'] || f[1] || '').toLowerCase();
-    const dir = (f['DIRECCION INFRACCION'] || f[3] || '').toLowerCase();
-    return rad.includes(q) || dir.includes(q);
-  });
-  renderGestionPendientes(filtrado);
-  renderGestionIniciados(filtrado);
-  renderGestionAsignados(filtrado);
+  const q = (document.getElementById('gestion-buscar')?.value || '').toLowerCase().trim();
+  const cont = document.getElementById('gestion-resultados');
+  if (!_gestionData || !_gestionData.length) return;
+
+  let filtrado = _gestionData;
+
+  // Filtro por estado
+  if (_gestionFiltroEstado) {
+    filtrado = filtrado.filter(f => normalizarEstado(f['ESTADO VISITA'] || f[13] || '') === _gestionFiltroEstado);
+  } else {
+    // Sin filtro de estado: solo mostrar PENDIENTE + ASIGNADO + INICIADO
+    filtrado = filtrado.filter(f => {
+      const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+      return est === 'PENDIENTE' || est === 'ASIGNADO' || est === 'INICIADO';
+    });
+  }
+
+  // Filtro por texto
+  if (q) {
+    filtrado = filtrado.filter(f => {
+      const rad = (f['RADICADO'] || f[1] || '').toLowerCase();
+      const dir = (f['DIRECCION INFRACCION'] || f[3] || '').toLowerCase();
+      return rad.includes(q) || dir.includes(q);
+    });
+  }
+
+  // Si no hay texto ni filtro de estado, mostrar placeholder
+  if (!q && !_gestionFiltroEstado) {
+    cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--texto-suave);"><div style="font-size:32px;margin-bottom:12px;">🔍</div><div style="font-size:14px;font-weight:500;">Busca un radicado o filtra por estado</div></div>';
+    return;
+  }
+
+  if (!filtrado.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--texto-suave);font-size:13px;">Sin resultados</div>';
+    return;
+  }
+
+  // Ordenar por radicado
+  filtrado.sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
+
+  // Renderizar tarjetas estilo Asana
+  cont.innerHTML = '<div style="font-size:11px;color:var(--texto-suave);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">' + filtrado.length + ' resultado(s)</div>' +
+    filtrado.map(f => renderGestionCard(f)).join('');
 }
 
-function renderGestionPendientes(filas) {
-  const cont = document.getElementById('gestion-lista-pendientes');
-  if (!cont) return;
-  const pendientes = filas.filter(f => {
-    const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
-    return est === 'PENDIENTE';
-  }).sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
-  if (!pendientes.length) { cont.innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">No hay radicados pendientes de asignar.</p>'; return; }
-  cont.innerHTML = pendientes.map(f => {
-    const rad = f['RADICADO'] || f[1] || '';
-    const dir = f['DIRECCION INFRACCION'] || f[3] || '';
-    const bar = f['BARRIO/VEREDA'] || f[4] || '';
-    const filaSheets = f._idx || 2;
-    return `<div style="background:var(--bg-input);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <div style="min-width:0;flex:1;">
-        <div style="font-weight:600;font-size:13px;">${rad}</div>
-        <div style="font-size:12px;color:var(--texto-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}${bar ? ' · ' + bar : ''}</div>
-      </div>
-      <button class="btn-principal verde" style="padding:6px 12px;font-size:12px;flex-shrink:0;" onclick="abrirModalAsignar(${filaSheets},'${rad.replace(/'/g,"\\'")}','${dir.replace(/'/g,"\\'")}')">Asignar</button>
+function renderGestionCard(f) {
+  const rad = f['RADICADO'] || f[1] || '';
+  const dir = f['DIRECCION INFRACCION'] || f[3] || '';
+  const bar = f['BARRIO/VEREDA'] || f[4] || '';
+  const vis = f['VISITADOR(ES)'] || f[17] || '';
+  const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
+  const estNorm = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+  const filaSheets = f._idx || 2;
+
+  // Badge de estado
+  const badgeMap = {
+    'PENDIENTE': '<span class="badge badge-pendiente">Pendiente</span>',
+    'ASIGNADO': '<span class="badge badge-otra">Asignado</span>',
+    'INICIADO': '<span class="badge badge-iniciado">Iniciado</span>',
+    'COMPLETADO': '<span class="badge badge-completado">Completado</span>'
+  };
+  const badge = badgeMap[estNorm] || '<span class="badge badge-otra">' + estNorm + '</span>';
+
+  // Check circular estilo Asana
+  const checkClass = estNorm === 'COMPLETADO' ? 'radicado-check completado' : 'radicado-check';
+  const checkClick = estNorm === 'INICIADO'
+    ? `onclick="event.stopPropagation(); toggleCompletado(null,${filaSheets},'${fAsig.replace(/'/g,"\\'")}')" style="cursor:pointer;" title="Marcar completado"`
+    : estNorm === 'COMPLETADO'
+    ? 'title="Completado"'
+    : 'title="' + estNorm + '"';
+
+  // Botones de acción según estado
+  let acciones = '';
+  if (estNorm === 'PENDIENTE') {
+    acciones = `<div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn-sm verde" onclick="event.stopPropagation(); abrirModalAsignar(${filaSheets},'${rad.replace(/'/g,"\\'")}','${dir.replace(/'/g,"\\'")}')">👤 Asignar</button>
     </div>`;
-  }).join('');
-}
+  } else if (estNorm === 'ASIGNADO') {
+    acciones = `<div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn-sm azul" onclick="event.stopPropagation(); abrirVisitaPorIdx(${filaSheets})">📝 Iniciar visita</button>
+      <button class="btn-sm gris" onclick="event.stopPropagation(); abrirModalAsignarIniciado(${filaSheets},'${rad.replace(/'/g,"\\'")}','${dir.replace(/'/g,"\\'")}')">⤵ Reasignar</button>
+    </div>`;
+  } else if (estNorm === 'INICIADO') {
+    acciones = `<div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn-sm verde" onclick="event.stopPropagation(); toggleCompletado(null,${filaSheets},'${fAsig.replace(/'/g,"\\'")}')">✅ Completar</button>
+      <button class="btn-sm gris" onclick="event.stopPropagation(); abrirVisitaPorIdx(${filaSheets})">👁 Ver</button>
+    </div>`;
+  }
 
-function renderGestionIniciados(filas) {
-  const cont = document.getElementById('gestion-lista-iniciados');
-  if (!cont) return;
-  const iniciados = filas.filter(f => {
-    const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
-    return est === 'INICIADO';
-  }).sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
-  if (!iniciados.length) { cont.innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">No hay registros iniciados pendientes de completar.</p>'; return; }
-  cont.innerHTML = iniciados.map(f => {
-    const rad = f['RADICADO'] || f[1] || '';
-    const dir = f['DIRECCION INFRACCION'] || f[3] || '';
-    const vis = f['VISITADOR(ES)'] || f[17] || '';
-    const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
-    const filaSheets = f._idx || 2;
-    const checkId = 'comp-check-' + filaSheets;
-    return `<div style="background:var(--bg-input);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:12px;">
-      <input type="checkbox" id="${checkId}" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--verde);cursor:pointer;" onchange="toggleCompletado(this,${filaSheets},'${fAsig.replace(/'/g,"\\'")}')">
-      <div style="min-width:0;flex:1;">
-        <div style="font-weight:600;font-size:14px;color:var(--texto);">${rad}</div>
-        <div style="font-size:13px;color:var(--texto-suave);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
-        <div style="font-size:12px;color:var(--texto-suave);margin-top:4px;">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asignado: ' + fAsig : ''}</div>
-      </div>
-      <div style="position:relative;flex-shrink:0;">
-        <button style="padding:6px 12px;font-size:11px;background:var(--brand-accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="mostrarDropdownAsignar(event,${filaSheets})">⤵ Asignar</button>
-        <div id="dropdown-asignar-${filaSheets}" style="display:none;position:absolute;top:100%;right:0;background:#fff;border:1px solid var(--borde);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;min-width:140px;margin-top:4px;">
-          <div style="padding:6px 0;">
-            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'ALEJANDRO HERNANDEZ')">👤 Alejandro</button>
-            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'MAURICIO HERRERA')">👤 Mauricio</button>
-            <button style="width:100%;padding:8px 12px;text-align:left;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--texto);" onclick="asignarInspector(${filaSheets},'DANIEL PEDRAZA')">👤 Daniel</button>
-          </div>
+  return `<div class="radicado-item" style="margin-bottom:6px;">
+    <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:12px;">
+      <div class="${checkClass}" ${checkClick}></div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="font-weight:600;font-size:13px;color:var(--texto);">${rad}</div>
+          ${badge}
         </div>
+        <div style="font-size:12px;color:var(--texto-suave);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}${bar ? ' · ' + bar : ''}</div>
+        ${vis ? '<div style="font-size:11px;color:var(--texto-3);margin-top:3px;">👤 ' + vis + (fAsig ? ' · ' + fAsig : '') + '</div>' : ''}
+        ${acciones}
       </div>
-    </div>`;
-  }).join('');
-}
-
-function renderGestionAsignados(filas) {
-  const cont = document.getElementById('gestion-lista-asignados');
-  if (!cont) return;
-  const asignados = filas.filter(f => {
-    const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
-    return est === 'ASIGNADO';
-  }).sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
-  if (!asignados.length) { cont.innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">No hay registros asignados pendientes de iniciar.</p>'; return; }
-  cont.innerHTML = asignados.map(f => {
-    const rad = f['RADICADO'] || f[1] || '';
-    const dir = f['DIRECCION INFRACCION'] || f[3] || '';
-    const vis = f['VISITADOR(ES)'] || f[17] || '';
-    const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
-    const filaSheets = f._idx || 2;
-    return `<div style="background:var(--bg-input);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:12px;">
-      <div style="min-width:0;flex:1;">
-        <div style="font-weight:600;font-size:14px;color:var(--texto);">${rad}</div>
-        <div style="font-size:13px;color:var(--texto-suave);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
-        <div style="font-size:12px;color:var(--texto-suave);margin-top:4px;">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asignado: ' + fAsig : ''}</div>
-      </div>
-      <button class="btn-principal" style="padding:8px 16px;font-size:12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;font-weight:600;" onclick="abrirVisitaPorIdx(${filaSheets})">📝 Iniciar</button>
-    </div>`;
-  }).join('');
+    </div>
+  </div>`;
 }
 
 let _asignarFila = null;
@@ -5945,10 +5524,7 @@ function abrirModalAsignarIniciado(filaSheets, rad, dir) {
 }
 
 function toggleCompletado(checkbox, filaSheets, fechaAsig) {
-  if (checkbox.checked) {
-    marcarCompletado(filaSheets, fechaAsig);
-    checkbox.checked = false; // Reset para feedback visual
-  }
+  marcarCompletado(filaSheets, fechaAsig);
 }
 function cerrarModalAsignar() {
   document.getElementById('modal-asignar').style.display = 'none';
@@ -5958,8 +5534,8 @@ function cerrarModalAsignar() {
 async function confirmarAsignar() {
   if (!_asignarFila) return;
   const inspector = document.getElementById('modal-asignar-inspector').value;
-  const fechaISO = document.getElementById('modal-asignar-fecha').value;
-  const fechaDDMMYYYY = isoAFecha(fechaISO);
+  // Fecha siempre = hoy
+  const fechaDDMMYYYY = hoyDDMMYYYY();
 
   showLoading('Asignando radicado...', '');
   try {
