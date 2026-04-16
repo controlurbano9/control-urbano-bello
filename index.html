@@ -4959,6 +4959,7 @@ window.cargarLog = async function() {
 
 // ═══════════════════════════════════════════
 // Leer USUARIOS activos para el selector de login
+window.cargarInspectorLogin = function() {
   const BASE = 'https://sheets.googleapis.com/v4/spreadsheets/' + CFG.sheetId;
   fetch(BASE + '/values/USUARIOS?key=' + CFG.apiKey)
     .then(function(r) { return r.json(); })
@@ -4981,7 +4982,7 @@ window.cargarLog = async function() {
 }
 
 window.addEventListener('load', () => {
-  cargarInspectores();
+  cargarInspectorLogin();
   setMaxFechas();
   const nombre = localStorage.getItem('cu_usuario');
   const cargo = localStorage.getItem('cu_cargo');
