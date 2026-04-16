@@ -859,6 +859,7 @@
         <button class="btn-filtro" data-filtro="PENDIENTE" onclick="toggleFiltroEstado(this,'PENDIENTE')">⏳ Pendientes</button>
         <button class="btn-filtro" data-filtro="INICIADO"  onclick="toggleFiltroEstado(this,'INICIADO')">🔄 Iniciados</button>
         <button class="btn-filtro" data-filtro="COMPLETADO" onclick="toggleFiltroEstado(this,'COMPLETADO')">✅ Completados</button>
+        <button class="btn-filtro" data-filtro="RURAL" onclick="toggleFiltroRural(this)">🌾 Rural</button>
       </div>
       <div class="card-titulo" style="margin-top:10px;margin-bottom:8px;">Comuna</div>
       <div class="filtros-comunas" id="chips-comunas">
@@ -1610,6 +1611,14 @@
         <p style="color:var(--texto-suave); font-size:13px;">Cargando...</p>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-titulo">👤 Registros Asignados</div>
+      <p style="font-size:13px; color:var(--texto-suave); margin-bottom:12px;">Registros en estado <strong>ASIGNADO</strong> - en espera de visita</p>
+      <div id="gestion-lista-asignados" style="display:flex; flex-direction:column; gap:8px;">
+        <p style="color:var(--texto-suave); font-size:13px;">Cargando...</p>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL ASIGNAR -->
@@ -1651,9 +1660,9 @@
 // ═══════════════════════════════════════════
 const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
-  apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
+  apiKey:    '', // Cargada desde .env en tiempo de ejecución
   hoja:      'BD VISITAS',
-  claudeKey: '', // Cargada desde .env
+  claudeKey: '', // Cargada desde .env en tiempo de ejecución
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -2000,6 +2009,7 @@ function aplicarFiltros() {
   const tieneEstado = ST.filtrosEstado.length > 0;
   const tieneComuna = ST.filtroComunas.length > 0;
   const tieneVisitador = ST.filtrosVisitador && ST.filtrosVisitador.length > 0;
+  const tieneRural = ST._filtroRural;
 
   const filtrados = ST.datos
     .map(f => ({ f, i: f._idx }))
@@ -2016,12 +2026,17 @@ function aplicarFiltros() {
         const vis = (f['VISITADOR(ES)'] || f[17] || '').toString().toUpperCase();
         if (!ST.filtrosVisitador.some(v => vis.includes(v))) return false;
       }
+      if (tieneRural) {
+        // Filtro RURAL: solo mostrar si barrio comienza con "Vda."
+        const barrio = (f['BARRIO/VEREDA'] || f[4] || '').toString().trim();
+        if (!barrio.startsWith('Vda.')) return false;
+      }
       return true;
     });
 
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
   if (btnLimpiar) {
-    btnLimpiar.classList.toggle('visible', tieneEstado || tieneComuna || tieneVisitador);
+    btnLimpiar.classList.toggle('visible', tieneEstado || tieneComuna || tieneVisitador || tieneRural);
   }
 
   renderLista(filtrados);
@@ -2064,6 +2079,19 @@ function toggleFiltroComuna(btn, comuna) {
   } else {
     ST.filtroComunas.splice(idx, 1);
     btn.classList.remove('activo-comuna');
+  }
+  aplicarFiltros();
+}
+
+// ── Toggle filtro RURAL ─────────────────────────────────────────────
+function toggleFiltroRural(btn) {
+  // El filtro RURAL busca barrios/veredas que comiencen con "Vda."
+  if (!ST._filtroRural) {
+    ST._filtroRural = true;
+    btn.classList.add('activo-pendiente');
+  } else {
+    ST._filtroRural = false;
+    btn.classList.remove('activo-pendiente', 'activo-iniciado', 'activo-completado');
   }
   aplicarFiltros();
 }
@@ -2478,7 +2506,10 @@ function prepararFormulario(fila, filaIdx) {
     if (habitado) selRadVal('rg-habitado', habitado);
     document.getElementById('f-altura-pisos').value = fila['ALTURA EN PISOS'] || celda(fila, 28);
     document.getElementById('f-dest-actuales').value = fila['N DESTINACIONES ACTUALES'] || fila['N° DESTINACIONES ACTUALES'] || celda(fila, 29);
-    cargarChipsUsosCubierta(fila['USOS ACTUALES'] || celda(fila, 30), fila['TIPO CUBIERTA ACTUAL'] || celda(fila, 31));
+    // Cargar chips con delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+      cargarChipsUsosCubierta(fila['USOS ACTUALES'] || celda(fila, 30), fila['TIPO CUBIERTA ACTUAL'] || celda(fila, 31));
+    }, 100);
 
     // Verificación documental
     const licAp = fila['SE APORTO LICENCIA'] || fila[35] || celda(fila,35) || '';
@@ -2512,6 +2543,7 @@ function prepararFormulario(fila, filaIdx) {
         const radOfPrev = document.getElementById('radicado-oficio-preview');
         if (radOfPrev) { radOfPrev.textContent = 'OFICIO-' + ordenGuardado; radOfPrev.style.display = 'block'; }
       } else {
+        // También llenar en PQR aunque no sea oficio
         const consPqr = document.getElementById('f-orden-consecutivo-pqr');
         if (consPqr) consPqr.value = parseInt(consVal) || '';
       }
@@ -5724,11 +5756,13 @@ async function cargarGestion() {
   if (ST.rol !== 'ADMIN') return;
   document.getElementById('gestion-lista-pendientes').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
   document.getElementById('gestion-lista-iniciados').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
+  document.getElementById('gestion-lista-asignados').innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">Cargando...</p>';
   try {
     const { datos } = await leerHojaConHeaders();
     _gestionData = datos;
     renderGestionPendientes(_gestionData);
     renderGestionIniciados(_gestionData);
+    renderGestionAsignados(_gestionData);
   } catch(e) {
     notif('Error cargando gestión: ' + e.message, 'error');
   }
@@ -5742,6 +5776,8 @@ function filtrarGestion() {
     return rad.includes(q) || dir.includes(q);
   });
   renderGestionPendientes(filtrado);
+  renderGestionIniciados(filtrado);
+  renderGestionAsignados(filtrado);
 }
 
 function renderGestionPendientes(filas) {
@@ -5781,13 +5817,40 @@ function renderGestionIniciados(filas) {
     const vis = f['VISITADOR(ES)'] || f[17] || '';
     const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
     const filaSheets = f._idx || 2;
-    return `<div style="background:var(--bg-input);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    const checkId = 'comp-check-' + filaSheets;
+    return `<div style="background:var(--bg-input);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:12px;">
+      <input type="checkbox" id="${checkId}" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--verde);cursor:pointer;" onchange="toggleCompletado(this,${filaSheets},'${fAsig.replace(/'/g,"\\'")}')">
       <div style="min-width:0;flex:1;">
-        <div style="font-weight:600;font-size:13px;">${rad}</div>
-        <div style="font-size:12px;color:var(--texto-suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
-        <div style="font-size:11px;color:var(--texto-suave);">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asig: ' + fAsig : ''}</div>
+        <div style="font-weight:600;font-size:14px;color:var(--texto);">${rad}</div>
+        <div style="font-size:13px;color:var(--texto-suave);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
+        <div style="font-size:12px;color:var(--texto-suave);margin-top:4px;">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asignado: ' + fAsig : ''}</div>
       </div>
-      <button class="btn-principal" style="padding:6px 12px;font-size:12px;background:var(--verde);flex-shrink:0;" onclick="marcarCompletado(${filaSheets},'${fAsig.replace(/'/g,"\\'")}')">✓ Completar</button>
+      <button class="btn-principal" style="padding:8px 16px;font-size:12px;background:var(--brand-accent);color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;font-weight:600;" onclick="abrirModalAsignarIniciado(${filaSheets},'${rad.replace(/'/g,"\\'")}','${dir.replace(/'/g,"\\'")}')">→ Asignar</button>
+    </div>`;
+  }).join('');
+}
+
+function renderGestionAsignados(filas) {
+  const cont = document.getElementById('gestion-lista-asignados');
+  if (!cont) return;
+  const asignados = filas.filter(f => {
+    const est = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+    return est === 'ASIGNADO';
+  }).sort((a,b) => (a['RADICADO']||a[1]||'').localeCompare(b['RADICADO']||b[1]||''));
+  if (!asignados.length) { cont.innerHTML = '<p style="color:var(--texto-suave);font-size:13px;">No hay registros asignados pendientes de iniciar.</p>'; return; }
+  cont.innerHTML = asignados.map(f => {
+    const rad = f['RADICADO'] || f[1] || '';
+    const dir = f['DIRECCION INFRACCION'] || f[3] || '';
+    const vis = f['VISITADOR(ES)'] || f[17] || '';
+    const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
+    const filaSheets = f._idx || 2;
+    return `<div style="background:var(--bg-input);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:12px;">
+      <div style="min-width:0;flex:1;">
+        <div style="font-weight:600;font-size:14px;color:var(--texto);">${rad}</div>
+        <div style="font-size:13px;color:var(--texto-suave);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir}</div>
+        <div style="font-size:12px;color:var(--texto-suave);margin-top:4px;">${vis ? '👤 ' + vis : ''}${fAsig ? ' · Asignado: ' + fAsig : ''}</div>
+      </div>
+      <button class="btn-principal" style="padding:8px 16px;font-size:12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;font-weight:600;" onclick="abrirVisitaPorIdx(${filaSheets})">📝 Iniciar</button>
     </div>`;
   }).join('');
 }
@@ -5799,6 +5862,21 @@ function abrirModalAsignar(filaSheets, rad, dir) {
   document.getElementById('modal-asignar-dir').textContent = dir;
   document.getElementById('modal-asignar-fecha').value = new Date().toISOString().split('T')[0];
   document.getElementById('modal-asignar').style.display = 'flex';
+}
+
+function abrirModalAsignarIniciado(filaSheets, rad, dir) {
+  _asignarFila = filaSheets;
+  document.getElementById('modal-asignar-titulo').textContent = 'Reasignar ' + rad;
+  document.getElementById('modal-asignar-dir').textContent = dir;
+  document.getElementById('modal-asignar-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-asignar').style.display = 'flex';
+}
+
+function toggleCompletado(checkbox, filaSheets, fechaAsig) {
+  if (checkbox.checked) {
+    marcarCompletado(filaSheets, fechaAsig);
+    checkbox.checked = false; // Reset para feedback visual
+  }
 }
 function cerrarModalAsignar() {
   document.getElementById('modal-asignar').style.display = 'none';
