@@ -1535,7 +1535,9 @@
         <button class="btn-principal" onclick="descargarF46xlsx()" id="btn-generar-acta" style="display:none; flex:1; background:var(--superficie); color:var(--texto); border:1px solid var(--borde); box-shadow:var(--sombra-md);"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Acta (F-GGO-46)</button>
         <button class="btn-principal" onclick="mostrarPanelInforme()" id="btn-generar-informe" style="display:none; flex:1; background:var(--superficie); color:var(--texto); border:1px solid var(--borde); box-shadow:var(--sombra-md);"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Informe (F-GGO-43)</button>
       </div>
-      <button class="btn-principal azul" id="btn-ver-acta-pdf" style="display:none; background:#0F4C81;"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver acta (PDF)</button>
+      <button class="btn-principal azul" id="btn-ver-acta-pdf" style="display:none; background:#0F4C81;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta</button>
+      <button class="btn-principal azul" id="btn-ver-pdf-acta" style="display:none; background:#7B2D00;" onclick="window.open(ST._linkPdfActa,'_blank')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver PDF</button>
+      <button class="btn-principal" id="btn-generar-pdf-acta" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);" onclick="generarPdfDesdeSheet()"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Generar PDF (Admin)</button>
       <button class="btn-principal gris" onclick="irA('pantalla-home'); setNav('nav-home')" style="margin-bottom:24px;"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Cancelar</button>
 
       <!-- FOTOS -->
@@ -1690,9 +1692,12 @@ let ST = {
   esOficio: false,
   _comunaOficio: null,
   _idCarpetaFotos: null,
+  _idCarpetaVisita: null,
   _linkCarpetaDrive: null,
   _cargosUsuarios: {},
   _fotosSubidas: false,
+  _ssIdActa: null,
+  _linkSheetActa: null,
   _actaGenerada: false,
   _informeGenerado: false,
 };
@@ -2323,7 +2328,10 @@ function prepararFormulario(fila, filaIdx) {
     ST.esOficio = false;
     ST._comunaOficio = null;
     ST._idCarpetaFotos = null;
+    ST._idCarpetaVisita = null;
     ST._linkCarpetaDrive = null;
+    ST._ssIdActa = null;
+    ST._linkSheetActa = null;
     ST._fotosSubidas = false;
     ST._actaGenerada = false;
     ST._informeGenerado = false;
@@ -2397,9 +2405,13 @@ function prepararFormulario(fila, filaIdx) {
     ST._fotosSubidas = !!(linkD);
     ST._linkCarpetaDrive = linkD;
     // Cargar links de acta si existen en BD
-    ST._linkXlsxActa = fila['LINK_XLSX_ACTA'] || fila[57] || '';
-    ST._linkPdfActa  = fila['LINK_PDF_ACTA']  || fila[56] || '';
-    ST._actaGenerada = !!(ST._linkXlsxActa || ST._linkPdfActa);
+    ST._linkXlsxActa  = fila['LINK_XLSX_ACTA'] || fila[57] || '';
+    ST._linkSheetActa = ST._linkXlsxActa; // El Sheet es el mismo link que xlsx
+    ST._linkPdfActa   = fila['LINK_PDF_ACTA']  || fila[56] || '';
+    // Extraer ssId del link del Sheet para poder generar PDF después
+    const matchSsId = ST._linkSheetActa.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    ST._ssIdActa = matchSsId ? matchSsId[1] : '';
+    ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
     actualizarBotonesActa();
     // Cambiar botón a "Completar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
@@ -2825,6 +2837,7 @@ async function guardarRegistro() {
         if (dCarpeta.ok) {
           linkDrive = dCarpeta.linkCarpeta || '';
           ST._idCarpetaFotos = dCarpeta.idFotos || '';
+          ST._idCarpetaVisita = (dCarpeta.linkCarpeta || '').match(/folders\/([a-zA-Z0-9_-]+)/)?.[1] || '';
           ST._linkCarpetaDrive = dCarpeta.linkCarpeta || '';
         }
       } catch(eDrive) { /* silencioso — no bloquear el guardado */ }
@@ -3159,40 +3172,117 @@ async function mejorarRedaccion() {
   const btn = document.getElementById('btn-mejorar');
   btn.disabled = true;
   btn.textContent = '⏳ Mejorando...';
-  showLoading('Mejorando redacción...', 'Claude AI está procesando el texto');
+  showLoading('Mejorando redacción con IA...', 'Procesando con Groq...');
+
+  const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia. Reescribe el siguiente texto en prosa formal y técnica, en un solo párrafo continuo sin listas ni numeración. Reglas estrictas:
+- Describe únicamente lo observado físicamente en el predio
+- Usa términos precisos de construcción: voladizo, cerramiento, ampliación, antejardín, paramento, etc.
+- NO uses estas palabras: reglamentario, normativo, vigente, pertinente, correspondiente, establecido, aplicable, normatividad, constatar, reglamentación, normativa vigente
+- NO cites artículos ni leyes
+- NO agregues conclusiones, recomendaciones ni acciones a tomar
+- NO inventes ni agregues información que no esté en el texto original — solo reformula lo que el inspector escribió
+- NO agregues frases de relleno, introducciones genéricas ni texto que no provenga del original
+- Mantén todos los hechos exactamente como están
+- Responde SOLO con el texto reescrito en prosa, sin explicaciones previas`;
+
+  const USER_PROMPT = texto;
+
+  let textMejorado = null;
+  let errorMsg = '';
+
+  // ── Intento 1: Claude vía Apps Script (server-side, sin CORS desde https://) ──
   try {
-    const prompt = `Mejora esta descripción de inspección urbanística manteniendo todos los hechos. Usa lenguaje técnico formal, sin puntos suspensivos. Máximo 1460 caracteres:\n\n"${texto}"`;
-    // POST con text/plain evita CORS preflight (Apps Script acepta ambos)
-    const r = await fetch(CFG.webhook, {
+    showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
+    const resp = await fetch(CFG.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion: 'mejorarTexto', texto: prompt })
+      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + USER_PROMPT })
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const raw = await r.text();
+    if (!resp.ok) throw new Error(`Apps Script HTTP ${resp.status}`);
+    const raw = await resp.text();
     let data;
-    try { data = JSON.parse(raw); } catch(e) {
-      console.error('Respuesta no-JSON de webhook:', raw.substring(0, 500));
-      throw new Error('Webhook respondió sin JSON válido');
-    }
-    // Buscar el texto en múltiples campos posibles que devuelva el Apps Script
-    const textMejorado = (data.texto || data.resultado || data.text || data.mejorado || data.response || '').trim();
-    console.log('Respuesta webhook mejorarTexto:', data);
-    if (textMejorado) {
-      hideLoading();
-      const conf = confirm(`TEXTO MEJORADO:\n\n${textMejorado}\n\n¿Reemplazar el texto original?`);
-      if (conf) textarea.value = textMejorado;
-    } else if (data.error) {
-      notif('Error del servidor: ' + data.error, 'error');
-    } else {
-      notif('Respuesta vacía del servidor. Revisa consola.', 'error');
-    }
+    try { data = JSON.parse(raw); } catch(e) { throw new Error('Respuesta no-JSON: ' + raw.substring(0, 100)); }
+    const candidato = (data.texto || data.resultado || data.text || data.mejorado || data.response || '').trim();
+    if (!candidato) throw new Error(data.error || 'Respuesta vacía de Apps Script');
+    textMejorado = candidato;
+    console.log('mejorarRedaccion: OK vía Claude (Apps Script)');
   } catch(e) {
-    notif('Error al mejorar: ' + e.message, 'error');
-  } finally {
-    hideLoading();
-    btn.disabled = false;
-    btn.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></span> Mejorar';
+    console.warn('mejorarRedaccion: Claude/Apps Script falló:', e.message);
+    errorMsg = e.message;
+  }
+
+  // ── Intento 2: Groq API directo (CORS habilitado para browsers) ──
+  if (!textMejorado) {
+    try {
+      showLoading('Mejorando redacción con IA...', 'Usando Groq como respaldo...');
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer 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'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: USER_PROMPT }
+          ],
+          max_tokens: 600,
+          temperature: 0.3
+        })
+      });
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`Groq HTTP ${resp.status}: ${err.substring(0, 200)}`);
+      }
+      const data = await resp.json();
+      textMejorado = data?.choices?.[0]?.message?.content?.trim() || null;
+      if (!textMejorado) throw new Error('Groq devolvió respuesta vacía');
+      console.log('mejorarRedaccion: OK vía Groq (fallback)');
+    } catch(e) {
+      console.warn('mejorarRedaccion: Groq falló:', e.message);
+      errorMsg += ' | Groq: ' + e.message;
+    }
+  }
+
+  // ── Intento 3: Gemini API directo (último recurso) ──
+  if (!textMejorado) {
+    try {
+      showLoading('Mejorando redacción con IA...', 'Usando Gemini como último recurso...');
+      const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`;
+      const resp2 = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }] }],
+          generationConfig: { maxOutputTokens: 600, temperature: 0.3 }
+        })
+      });
+      if (!resp2.ok) {
+        const err2 = await resp2.text();
+        throw new Error(`Gemini HTTP ${resp2.status}: ${err2.substring(0, 200)}`);
+      }
+      const data2 = await resp2.json();
+      textMejorado = data2?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+      if (!textMejorado) throw new Error('Gemini devolvió respuesta vacía');
+      console.log('mejorarRedaccion: OK vía Gemini (último recurso)');
+    } catch(e2) {
+      console.error('mejorarRedaccion: Gemini también falló:', e2.message);
+      errorMsg += ' | Gemini: ' + e2.message;
+    }
+  }
+
+  hideLoading();
+  btn.disabled = false;
+  btn.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg></span> Mejorar';
+
+  if (textMejorado) {
+    const conf = confirm(`TEXTO MEJORADO:\n\n${textMejorado}\n\n¿Reemplazar el texto original?`);
+    if (conf) textarea.value = textMejorado;
+  } else {
+    notif('No se pudo mejorar el texto. Verifica tu conexión.', 'error');
+    console.error('mejorarRedaccion: todos los intentos fallaron:', errorMsg);
   }
 }
 
@@ -4248,6 +4338,7 @@ function mostrarBotonFotosExistente(soloLectura) {
 
 async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
   try {
+    ST._idCarpetaVisita = idCarpeta; // ID de la carpeta de la visita (padre de Fotos)
     const url = CFG.webhook + '?accion=obtenerIdFotos&idCarpeta=' + encodeURIComponent(idCarpeta);
     const r = await fetch(url);
     const d = await r.json();
@@ -5297,8 +5388,8 @@ async function generarActaF46Final(fotos) {
       descripcion: f.descripcionFinal || f.descripcion
     }));
 
-    // Carpeta de la visita para guardar archivos
-    datos.idCarpetaVisita = ST._idCarpetaFotos || null;
+    // Carpeta de la visita (padre de Fotos) para guardar el acta
+    datos.idCarpetaVisita = ST._idCarpetaVisita || null;
 
     // Mapa nombre→cargo para nombre completo en acta
     datos.cargosUsuarios = ST._cargosUsuarios || {};
@@ -5312,23 +5403,21 @@ async function generarActaF46Final(fotos) {
     const d = await r.json();
 
     if (d.ok) {
-      ST._linkPdfActa  = d.linkPdf  || '';
-      ST._linkXlsxActa = d.linkXlsx || '';
-      ST._actaGenerada = true;
-      if (ST.filaEditando && (d.linkPdf || d.linkXlsx)) {
-        await guardarLinkActaEnBD(d.linkPdf, d.linkXlsx);
+      ST._ssIdActa      = d.ssId      || '';
+      ST._linkSheetActa = d.linkSheet || '';
+      ST._linkPdfActa   = '';
+      ST._linkXlsxActa  = d.linkSheet || '';
+      ST._actaGenerada  = true;
+      if (ST.filaEditando && d.linkSheet) {
+        await guardarLinkActaEnBD('', d.linkSheet, d.ssId);
       }
       hideLoading();
       actualizarPanelEstado();
       actualizarBotonesActa();
-      notif('✅ Acta generada — toca "Abrir Acta" para verla', 'exito');
+      notif('✅ Acta generada — toca "Abrir Acta" para revisar e imprimir', 'exito');
     } else {
       hideLoading();
-      const payload = encodeURIComponent(JSON.stringify(datos));
-      window.open(APPS_SCRIPT_F46_URL + '?datos=' + payload, '_blank');
-      notif('✅ Acta generándose en nueva pestaña', 'exito');
-      ST._actaGenerada = true;
-      actualizarPanelEstado();
+      notif('Error al generar acta: ' + (d.error || 'Error desconocido'), 'error');
     }
   } catch(e) {
     hideLoading();
@@ -5342,13 +5431,14 @@ async function generarActaF46Final(fotos) {
   }
 }
 
-async function guardarLinkActaEnBD(linkPdf, linkXlsx) {
+async function guardarLinkActaEnBD(linkPdf, linkSheet, ssId) {
   try {
     const payload = {
       accion: 'actualizarLinks',
       fila: ST.filaEditando,
-      linkPdfActa: linkPdf,
-      linkXlsxActa: linkXlsx
+      linkPdfActa: linkPdf || '',
+      linkXlsxActa: linkSheet || '',
+      ssIdActa: ssId || ''
     };
     await fetch(CFG.webhook, {
       method: 'POST',
@@ -5361,20 +5451,72 @@ async function guardarLinkActaEnBD(linkPdf, linkXlsx) {
 }
 
 function actualizarBotonesActa() {
-  // Botón Ver Acta PDF
+  // Botón principal: Abrir Acta (Sheet)
   const btnVerPdf = document.getElementById('btn-ver-acta-pdf');
   if (btnVerPdf) {
-    if (ST._linkPdfActa) {
-      btnVerPdf.style.display = '';
-      btnVerPdf.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver PDF';
-      btnVerPdf.onclick = () => window.open(ST._linkPdfActa, '_blank');
-    } else if (ST._linkXlsxActa) {
+    const linkSheet = ST._linkSheetActa || ST._linkXlsxActa || '';
+    if (linkSheet) {
       btnVerPdf.style.display = '';
       btnVerPdf.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta';
-      btnVerPdf.onclick = () => window.open(ST._linkXlsxActa, '_blank');
+      btnVerPdf.onclick = () => window.open(linkSheet, '_blank');
     } else {
       btnVerPdf.style.display = 'none';
     }
+  }
+
+  // Botón PDF: solo visible si ya existe PDF generado
+  const btnVerPdfDoc = document.getElementById('btn-ver-pdf-acta');
+  if (btnVerPdfDoc) {
+    if (ST._linkPdfActa) {
+      btnVerPdfDoc.style.display = '';
+      btnVerPdfDoc.onclick = () => window.open(ST._linkPdfActa, '_blank');
+    } else {
+      btnVerPdfDoc.style.display = 'none';
+    }
+  }
+
+  // Botón Generar PDF: visible para ADMIN cuando hay Sheet pero no hay PDF
+  const btnGenPdf = document.getElementById('btn-generar-pdf-acta');
+  if (btnGenPdf) {
+    const tieneSheet = !!(ST._linkSheetActa || ST._linkXlsxActa);
+    const tienePdf   = !!ST._linkPdfActa;
+    const esAdmin    = ST.rol === 'ADMIN';
+    btnGenPdf.style.display = (esAdmin && tieneSheet && !tienePdf) ? '' : 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// GENERAR PDF DESDE SHEET EXISTENTE (Admin)
+// ═══════════════════════════════════════════
+async function generarPdfDesdeSheet() {
+  if (!ST._ssIdActa) { notif('No hay acta generada para convertir a PDF', 'error'); return; }
+  if (!ST._idCarpetaVisita) { notif('No se encontró la carpeta de la visita', 'error'); return; }
+  showLoading('Generando PDF...', 'Convirtiendo acta a PDF');
+  try {
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        accion: 'generarPdfActa',
+        ssId: ST._ssIdActa,
+        idCarpetaVisita: ST._idCarpetaVisita,
+        cantFotos: 0
+      })
+    });
+    const d = await r.json();
+    if (d.ok && d.linkPdf) {
+      ST._linkPdfActa = d.linkPdf;
+      await guardarLinkActaEnBD(d.linkPdf, ST._linkSheetActa, ST._ssIdActa);
+      hideLoading();
+      actualizarBotonesActa();
+      notif('✅ PDF generado correctamente', 'exito');
+    } else {
+      hideLoading();
+      notif('Error generando PDF: ' + (d.error || 'Error desconocido'), 'error');
+    }
+  } catch(e) {
+    hideLoading();
+    notif('Error de conexión al generar PDF: ' + e.message, 'error');
   }
 }
 
