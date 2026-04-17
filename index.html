@@ -2291,7 +2291,6 @@ function prepararFormulario(fila, filaIdx) {
   if (!fila) ST.filaEditando = null;
   else ST.filaEditando = filaIdx || ST.filaEditando;
   document.getElementById('form-visita-contenedor').style.display = 'block';
-  document.getElementById('panel-informe').style.display = 'none';
 
   // Limpiar GPS y mapa
   ST.gpsLat = null; ST.gpsLon = null;
@@ -5527,8 +5526,11 @@ function toggleUso(el) {
 function actualizarUsos() {
   const activos = [...document.querySelectorAll('#chips-usos .chip-inf.activo')].map(c => c.dataset.val);
   const cual = document.getElementById('f-uso-cual').value.trim();
-  // Si hay Otro seleccionado y hay texto, reemplazar "Otro" por el texto
-  const final = activos.map(v => (v === 'Otro' && cual) ? cual : v).filter(v => v !== 'Otro' || cual);
+  const final = activos.map(v => {
+    if (v === 'Otro') return cual || null;                         // Otro → reemplazar por el texto
+    if (v !== 'Residencial' && cual) return v + ' (' + cual + ')'; // Comercial/Industrial/etc. → agregar detalle
+    return v;                                                       // Residencial → sin cambios
+  }).filter(Boolean);
   document.getElementById('f-usos').value = final.join(', ');
 }
 
