@@ -2495,9 +2495,10 @@ function prepararFormulario(fila, filaIdx) {
     const estObra = fila['ESTADO OBRA'] || fila[22] || celda(fila,22) || '';
     if (estObra) { selRadVal('rg-estado-obra', estObra); toggleSuspensionPorEstado(estObra); }
     else toggleSuspensionPorEstado('En proceso / iniciada');
-    const repLoc = fila['REPARACION LOCATIVA'] || fila[26] || celda(fila,26) || '';
+    const repLoc = fila['REPARACION LOCATIVA'] || fila['REPARACIÓN LOCATIVA'] || fila[26] || celda(fila,26) || '';
     if (repLoc) selRadVal('rg-rep-locativa', repLoc);
-    const habitado = fila['HABITADO'] || fila[27] || celda(fila,27) || '';
+    const habitado = fila['HABITADO'] || fila['¿HABITADO?'] || fila[27] || fila[28] || celda(fila,27) || celda(fila,28) || '';
+    console.log('Cargando habitado:', habitado, '| fila[27]:', fila[27], '| fila[28]:', fila[28]);
     if (habitado) selRadVal('rg-habitado', habitado);
     document.getElementById('f-altura-pisos').value = fila['ALTURA EN PISOS'] || celda(fila, 28);
     document.getElementById('f-dest-actuales').value = fila['N DESTINACIONES ACTUALES'] || fila['N° DESTINACIONES ACTUALES'] || celda(fila, 29);
@@ -4105,10 +4106,6 @@ function actualizarPanelEstado() {
              getRadVal('rg-amenaza') &&
              getRadVal('rg-suelo-prot') &&
              getRadVal('rg-quebrada'))
-    },
-    {
-      label: 'Registro fotográfico',
-      ok: !!(ST._fotosSubidas)
     },
     {
       label: 'Acta o Informe',
