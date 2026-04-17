@@ -1677,6 +1677,7 @@ let ST = {
   radicadoEncontrado: false,
   esOficio: false,
   _comunaOficio: null,
+  _fechaPrimeraVisita: null,
   _idCarpetaFotos: null,
   _idCarpetaVisita: null,
   _linkCarpetaDrive: null,
@@ -1709,11 +1710,13 @@ async function iniciarSesion() {
   if (!nombre) { errDiv.textContent = 'Selecciona tu nombre'; errDiv.style.display = 'block'; return; }
   if (!pin || pin.length !== 4) { errDiv.textContent = 'Ingresa tu PIN de 4 dígitos'; errDiv.style.display = 'block'; return; }
 
-  // Verificar bloqueo por intentos fallidos
-  const bloqueadoHasta = parseInt(localStorage.getItem('cu_bloqueado') || '0');
+  // Verificar bloqueo por intentos fallidos — clave por usuario
+  const keyBloq = 'cu_bloqueado_' + nombre;
+  const keyInt  = 'cu_intentos_'  + nombre;
+  const bloqueadoHasta = parseInt(localStorage.getItem(keyBloq) || '0');
   if (bloqueadoHasta > Date.now()) {
     const min = Math.ceil((bloqueadoHasta - Date.now()) / 60000);
-    errDiv.textContent = `Cuenta bloqueada. Intenta en ${min} minuto(s).`;
+    errDiv.textContent = `Usuario bloqueado. Intenta en ${min} minuto(s).`;
     errDiv.style.display = 'block';
     return;
   }
@@ -1736,9 +1739,9 @@ async function iniciarSesion() {
     loadDiv.style.display = 'none';
 
     if (usuario) {
-      // Login exitoso — limpiar intentos fallidos
-      localStorage.removeItem('cu_intentos');
-      localStorage.removeItem('cu_bloqueado');
+      // Login exitoso — limpiar intentos fallidos de este usuario
+      localStorage.removeItem(keyInt);
+      localStorage.removeItem(keyBloq);
       ST.usuario = usuario[0];
       ST.cargo = usuario[3] || 'Inspector';
       ST.rol = (usuario[4] || 'INSPECTOR').toUpperCase();
@@ -1757,14 +1760,14 @@ async function iniciarSesion() {
       localStorage.setItem('cu_sesion_expira', sesionExpira.toString());
       mostrarApp();
     } else {
-      // Incrementar intentos fallidos
-      let intentos = parseInt(localStorage.getItem('cu_intentos') || '0') + 1;
-      localStorage.setItem('cu_intentos', intentos.toString());
+      // Incrementar intentos fallidos — por usuario
+      let intentos = parseInt(localStorage.getItem(keyInt) || '0') + 1;
+      localStorage.setItem(keyInt, intentos.toString());
       if (intentos >= 3) {
         const bloqueadoHasta = Date.now() + (15 * 60 * 1000); // 15 minutos
-        localStorage.setItem('cu_bloqueado', bloqueadoHasta.toString());
-        localStorage.removeItem('cu_intentos');
-        errDiv.textContent = 'Demasiados intentos. Cuenta bloqueada 15 minutos.';
+        localStorage.setItem(keyBloq, bloqueadoHasta.toString());
+        localStorage.removeItem(keyInt);
+        errDiv.textContent = 'Demasiados intentos. Usuario bloqueado 15 minutos.';
       } else {
         errDiv.textContent = `PIN incorrecto. Intentos restantes: ${3 - intentos}`;
       }
@@ -2312,6 +2315,7 @@ function prepararFormulario(fila, filaIdx) {
     ST.radicadoEncontrado = false;
     ST.esOficio = false;
     ST._comunaOficio = null;
+    ST._fechaPrimeraVisita = null;
     ST._idCarpetaFotos = null;
     ST._idCarpetaVisita = null;
     ST._linkCarpetaDrive = null;
@@ -2436,6 +2440,8 @@ function prepararFormulario(fila, filaIdx) {
     const fechaGuardada = fila['FECHA DE VISITA'] || celda(fila, 15) || '';
     document.getElementById('f-fecha-visita').value = fechaAIso(fechaGuardada) || new Date().toISOString().split('T')[0];
     document.getElementById('f-fecha-radicado').value = fila['FECHA RADICADO'] || celda(fila, 2);
+    // Para oficio: guardar fecha de visita como primera (visita 1 = la misma fecha)
+    if (esOficioFila) ST._fechaPrimeraVisita = fechaGuardada || '';
 
     // Ubicación
     document.getElementById('f-direccion').value = fila['DIRECCION INFRACCION'] || celda(fila, 3);
@@ -3720,6 +3726,8 @@ async function verificarRadicado() {
       // Info visita
       // Arrastrar fecha de radicado de la primera visita (col C = índice 2)
       document.getElementById('f-fecha-radicado').value = primera['FECHA RADICADO'] || primera[2] || '';
+      // Para oficio: guardar fecha de la primera visita (no hay fechaRadicado, se usa la de la visita 1)
+      ST._fechaPrimeraVisita = primera['FECHA DE VISITA'] || primera[15] || '';
       // Fecha de visita por defecto = hoy (si no la tiene)
       const fvInput = document.getElementById('f-fecha-visita');
       if (fvInput && !fvInput.value) fvInput.value = new Date().toISOString().split('T')[0];
@@ -5202,7 +5210,9 @@ function recopilarDatosF46() {
   return {
     radicado: ST.esOficio ? (document.getElementById('f-orden').value ? 'OFICIO-' + document.getElementById('f-orden').value : '') : document.getElementById('f-radicado').value,
     fechaVisita: document.getElementById('f-fecha-visita').value,
-    fechaRadicado: document.getElementById('f-fecha-radicado').value,
+    fechaRadicado: ST.esOficio
+      ? (ST._fechaPrimeraVisita || document.getElementById('f-fecha-visita').value)
+      : document.getElementById('f-fecha-radicado').value,
     nVisita: ST.nVisita || 1,
     objetoVisita: ST.esOficio ? 'Verificación integridad urbanística' : 'Atención queja',
     direccion: document.getElementById('f-direccion').value,
