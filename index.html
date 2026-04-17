@@ -1530,11 +1530,8 @@
 
       <!-- ACCIONES -->
       <button class="btn-principal verde" onclick="guardarRegistro()"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg></span> Guardar registro</button>
-      <!-- Acta e Informe — lado a lado -->
-      <div style="display:flex; gap:8px; margin-bottom:0;">
-        <button class="btn-principal" onclick="descargarF46xlsx()" id="btn-generar-acta" style="display:none; flex:1; background:var(--superficie); color:var(--texto); border:1px solid var(--borde); box-shadow:var(--sombra-md);"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Acta (F-GGO-46)</button>
-        <button class="btn-principal" onclick="mostrarPanelInforme()" id="btn-generar-informe" style="display:none; flex:1; background:var(--superficie); color:var(--texto); border:1px solid var(--borde); box-shadow:var(--sombra-md);"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Informe (F-GGO-43)</button>
-      </div>
+      <!-- Botón Generar Acta -->
+      <button class="btn-principal" onclick="descargarF46xlsx()" id="btn-generar-acta" style="display:none; background:linear-gradient(135deg,#1E3A5F,#2563EB); color:#fff; border:none; box-shadow:var(--sombra-md); font-size:15px; font-weight:600; padding:14px 20px; border-radius:var(--r-md);"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Generar Acta F-GGO-46</button>
       <button class="btn-principal azul" id="btn-ver-acta-pdf" style="display:none; background:#0F4C81;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta</button>
       <button class="btn-principal azul" id="btn-ver-pdf-acta" style="display:none; background:#7B2D00;" onclick="window.open(ST._linkPdfActa,'_blank')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver PDF</button>
       <button class="btn-principal" id="btn-generar-pdf-acta" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);" onclick="generarPdfDesdeSheet()"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Generar PDF (Admin)</button>
@@ -1551,18 +1548,7 @@
       </div>
 
 
-    <!-- PANEL INFORME -->
-    <div id="panel-informe" style="display:none;">
-      <div class="card">
-        <div class="card-titulo">Informe técnico F-GGO-43</div>
-        <div class="cargando" id="spin-informe"><div class="spinner"></div>Generando con Claude AI...</div>
-        <textarea id="texto-informe" class="input-campo" rows="22" style="font-size:12px; font-family:'DM Mono',monospace; display:none; line-height:1.5;"></textarea>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-principal verde" onclick="copiarInforme()" style="margin-bottom:0; flex:1;">📋 Copiar</button>
-        <button class="btn-principal gris" onclick="document.getElementById('panel-informe').style.display='none';document.getElementById('form-visita-contenedor').style.display='block';" style="margin-bottom:0; flex:1;">← Volver</button>
-      </div>
-    </div><!-- fin panel-informe -->
+    <!-- panel-informe eliminado — disponible en V2 -->
 
   </div><!-- fin pantalla-nueva-visita -->
 
@@ -2406,8 +2392,9 @@ function prepararFormulario(fila, filaIdx) {
     ST._linkCarpetaDrive = linkD;
     // Cargar links de acta si existen en BD
     ST._linkXlsxActa  = fila['LINK_XLSX_ACTA'] || fila[57] || '';
-    ST._linkSheetActa = ST._linkXlsxActa; // El Sheet es el mismo link que xlsx
+    ST._linkSheetActa = ST._linkXlsxActa;
     ST._linkPdfActa   = fila['LINK_PDF_ACTA']  || fila[56] || '';
+    ST._estadoVisita  = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
     // Extraer ssId del link del Sheet para poder generar PDF después
     const matchSsId = ST._linkSheetActa.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
     ST._ssIdActa = matchSsId ? matchSsId[1] : '';
@@ -3175,16 +3162,22 @@ async function mejorarRedaccion() {
   btn.textContent = '⏳ Mejorando...';
   showLoading('Mejorando redacción con IA...', 'Procesando con Groq...');
 
-  const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia. Reescribe el siguiente texto en prosa formal y técnica, en un solo párrafo continuo sin listas ni numeración. Reglas estrictas:
-- Describe únicamente lo observado físicamente en el predio
-- Usa términos precisos de construcción: voladizo, cerramiento, ampliación, antejardín, paramento, etc.
-- NO uses estas palabras: reglamentario, normativo, vigente, pertinente, correspondiente, establecido, aplicable, normatividad, constatar, reglamentación, normativa vigente
+  const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia con años de experiencia. Tu tarea es mejorar el texto que te envío manteniendo mi tono y mi forma de expresarme — que suene como lo escribí yo, no como una IA.
+
+Reglas:
+- No sugerir nada, solo reescribir el texto
+- Mejorar la redacción, claridad y precisión técnica sin volverlo robótico ni demasiado formal
+- Organizar la información en orden cronológico y lógico
+- Identificar correctamente los elementos arquitectónicos, urbanísticos y estructurales observados
+- Describir la situación de forma objetiva, cortés y técnicamente fundamentada
+- Conservar fielmente todos los hechos, sin añadir información no verificada
+- El texto debe sonar humano y natural, como lo escribiría un inspector con experiencia — fluido, directo, sin palabras rebuscadas
+- Escribe en prosa continua, en un solo párrafo, sin listas ni numeración
+- NO uses estas palabras: reglamentario, normativo, vigente, pertinente, correspondiente, establecido, aplicable, normatividad, constatar, reglamentación
 - NO cites artículos ni leyes
 - NO agregues conclusiones, recomendaciones ni acciones a tomar
-- NO inventes ni agregues información que no esté en el texto original — solo reformula lo que el inspector escribió
-- NO agregues frases de relleno, introducciones genéricas ni texto que no provenga del original
-- Mantén todos los hechos exactamente como están
-- Responde SOLO con el texto reescrito en prosa, sin explicaciones previas`;
+- NO inventes ni agregues información que no esté en el texto original
+- Responde SOLO con el texto reescrito, sin explicaciones ni comentarios`;
 
   const USER_PROMPT = texto;
 
@@ -5448,37 +5441,39 @@ async function guardarLinkActaEnBD(linkPdf, linkSheet, ssId) {
 }
 
 function actualizarBotonesActa() {
-  // Botón principal: Abrir Acta (Sheet)
-  const btnVerPdf = document.getElementById('btn-ver-acta-pdf');
+  const esCompletado = ST._estadoVisita === 'COMPLETADO';
+  const linkSheet    = ST._linkSheetActa || ST._linkXlsxActa || '';
+  const tieneSheet   = !!linkSheet;
+  const tienePdf     = !!ST._linkPdfActa;
+  const esAdmin      = ST.rol === 'ADMIN';
+
+  // Botón Sheet: visible solo ANTES de COMPLETADO
+  const btnVerSheet = document.getElementById('btn-ver-acta-pdf');
+  if (btnVerSheet) {
+    if (tieneSheet && !esCompletado) {
+      btnVerSheet.style.display = '';
+      btnVerSheet.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta';
+      btnVerSheet.onclick = () => window.open(linkSheet, '_blank');
+    } else {
+      btnVerSheet.style.display = 'none';
+    }
+  }
+
+  // Botón PDF: visible solo cuando estado = COMPLETADO y existe PDF
+  const btnVerPdf = document.getElementById('btn-ver-pdf-acta');
   if (btnVerPdf) {
-    const linkSheet = ST._linkSheetActa || ST._linkXlsxActa || '';
-    if (linkSheet) {
+    if (esCompletado && tienePdf) {
       btnVerPdf.style.display = '';
-      btnVerPdf.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta';
-      btnVerPdf.onclick = () => window.open(linkSheet, '_blank');
+      btnVerPdf.onclick = () => window.open(ST._linkPdfActa, '_blank');
     } else {
       btnVerPdf.style.display = 'none';
     }
   }
 
-  // Botón PDF: solo visible si ya existe PDF generado
-  const btnVerPdfDoc = document.getElementById('btn-ver-pdf-acta');
-  if (btnVerPdfDoc) {
-    if (ST._linkPdfActa) {
-      btnVerPdfDoc.style.display = '';
-      btnVerPdfDoc.onclick = () => window.open(ST._linkPdfActa, '_blank');
-    } else {
-      btnVerPdfDoc.style.display = 'none';
-    }
-  }
-
-  // Botón Generar PDF: visible para ADMIN cuando hay Sheet pero no hay PDF
+  // Botón Generar PDF: solo ADMIN, cuando hay Sheet y estado = COMPLETADO pero sin PDF aún
   const btnGenPdf = document.getElementById('btn-generar-pdf-acta');
   if (btnGenPdf) {
-    const tieneSheet = !!(ST._linkSheetActa || ST._linkXlsxActa);
-    const tienePdf   = !!ST._linkPdfActa;
-    const esAdmin    = ST.rol === 'ADMIN';
-    btnGenPdf.style.display = (esAdmin && tieneSheet && !tienePdf) ? '' : 'none';
+    btnGenPdf.style.display = (esAdmin && tieneSheet && esCompletado && !tienePdf) ? '' : 'none';
   }
 }
 
