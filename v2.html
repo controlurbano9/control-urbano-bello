@@ -1539,11 +1539,21 @@
 
       <!-- FOTOS -->
       <div class="form-seccion" id="seccion-fotos" style="display:none;">
-        <span class="form-seccion-titulo titulo-azul">📁 Carpeta de visita</span>
-        <!-- V1: sin subida de fotos — disponible en V2 -->
-        <div id="bloque-subir-fotos" style="display:none;"></div>
-        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:4px;">
-          <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver carpeta en Drive
+        <span class="form-seccion-titulo titulo-azul">📷 Registro fotográfico</span>
+        <div id="bloque-subir-fotos">
+          <div class="input-grupo">
+            <label class="input-label">Agregar fotos (se analizan con IA automáticamente)</label>
+            <input type="file" id="input-fotos" accept="image/*" multiple
+              class="input-campo" style="padding:8px;" onchange="previsualizarFotos(this)">
+          </div>
+          <div id="preview-fotos" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+          <button class="btn-principal azul" onclick="subirFotos()" id="btn-subir-fotos" style="display:none; margin-top:8px;">
+            <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive
+          </button>
+          <div id="progreso-fotos" style="font-size:12px; color:var(--texto-suave); margin-top:6px;"></div>
+        </div>
+        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:8px;">
+          <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver fotos en Drive
         </button>
       </div>
 
@@ -1683,6 +1693,7 @@ let ST = {
   _linkCarpetaDrive: null,
   _cargosUsuarios: {},
   _fotosSubidas: false,
+  _fotosParaActa: [],   // [{ fileId, link, descripcion }] — guardado al subir
   _ssIdActa: null,
   _linkSheetActa: null,
   _actaGenerada: false,
@@ -2322,6 +2333,7 @@ function prepararFormulario(fila, filaIdx) {
     ST._ssIdActa = null;
     ST._linkSheetActa = null;
     ST._fotosSubidas = false;
+    ST._fotosParaActa = [];
     ST._actaGenerada = false;
     ST._informeGenerado = false;
     // Ocultar panel de estado
@@ -4024,7 +4036,15 @@ async function subirFotos() {
         })
       });
       const d = await r.json();
-      if (d.ok) subidas++; else errores++;
+      if (d.ok) {
+        subidas++;
+        // Guardar referencia Drive (fileId + descripción IA) para el acta
+        ST._fotosParaActa.push({
+          fileId:      d.fileId      || '',
+          link:        d.link        || '',
+          descripcion: d.descripcion || ''
+        });
+      } else { errores++; }
     } catch(e) { errores++; }
 
     // Actualizar barra
