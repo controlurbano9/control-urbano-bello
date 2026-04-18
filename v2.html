@@ -3966,43 +3966,94 @@ function toggleCitacion(check) {
 }
 
 // ═══════════════════════════════════════════
-// FOTOS — Preview y subida a Drive
+// FOTOS — Preview con X + subida a Drive + descripción Gemini
 // ═══════════════════════════════════════════
+
+// Almacén temporal de archivos seleccionados (permite eliminar antes de subir)
+window._fotosSeleccionadas = [];
+
 function previsualizarFotos(input) {
-  const preview = document.getElementById('preview-fotos');
+  if (!input.files.length) return;
+  // Agregar nuevos archivos al arreglo existente (no reemplazar)
+  Array.from(input.files).forEach(f => window._fotosSeleccionadas.push(f));
+  input.value = ''; // limpiar input para permitir re-selección del mismo archivo
+  renderizarPreviewFotos();
+}
+
+function renderizarPreviewFotos() {
+  const preview  = document.getElementById('preview-fotos');
   const btnSubir = document.getElementById('btn-subir-fotos');
+  const progreso = document.getElementById('progreso-fotos');
   preview.innerHTML = '';
-  if (!input.files.length) { btnSubir.style.display = 'none'; return; }
-  Array.from(input.files).forEach(file => {
+  const archivos = window._fotosSeleccionadas;
+  if (!archivos.length) {
+    btnSubir.style.display = 'none';
+    progreso.innerHTML = '';
+    return;
+  }
+  archivos.forEach((file, idx) => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde);';
-      preview.appendChild(img);
+    reader.onload = ev => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0;';
+      wrap.innerHTML = `
+        <img src="${ev.target.result}"
+          style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde); display:block;">
+        <button onclick="eliminarFotoPreview(${idx})"
+          style="position:absolute; top:-5px; right:-5px; background:var(--rojo,#e53e3e);
+                 color:white; border:none; border-radius:50%; width:18px; height:18px;
+                 font-size:10px; font-weight:700; cursor:pointer; line-height:18px;
+                 text-align:center; padding:0;">✕</button>`;
+      preview.appendChild(wrap);
     };
     reader.readAsDataURL(file);
   });
   btnSubir.style.display = 'block';
-  document.getElementById('progreso-fotos').innerHTML = `<span style="color:var(--texto-suave)">${input.files.length} foto(s) seleccionada(s)</span>`;
+  progreso.innerHTML = `<span style="color:var(--texto-suave)">${archivos.length} foto(s) seleccionada(s)</span>`;
+}
+
+function eliminarFotoPreview(idx) {
+  window._fotosSeleccionadas.splice(idx, 1);
+  renderizarPreviewFotos();
+}
+
+// Descripción IA desde el browser — evita timeout de Apps Script
+async function describirFotoEnNavegador(base64, mimeType) {
+  try {
+    const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { text: 'Describe esta fotografía de inspección de obra en máximo 8 palabras en español. Solo palabras clave, sin puntuación ni comentarios.' },
+            { inline_data: { mime_type: mimeType, data: base64 } }
+          ]}],
+          generationConfig: { maxOutputTokens: 30, temperature: 0.2 }
+        })
+      }
+    );
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  } catch(e) { return ''; }
 }
 
 async function subirFotos() {
-  const input = document.getElementById('input-fotos');
-  const progreso = document.getElementById('progreso-fotos');
-  const btnSubir = document.getElementById('btn-subir-fotos');
+  const archivos  = window._fotosSeleccionadas;
+  const progreso  = document.getElementById('progreso-fotos');
+  const btnSubir  = document.getElementById('btn-subir-fotos');
   const idCarpeta = ST._idCarpetaFotos;
 
-  if (!idCarpeta) { notif('Guarda el registro primero', 'error'); return; }
-  if (!input.files.length) { notif('Selecciona al menos una foto', 'error'); return; }
+  if (!idCarpeta)      { notif('Guarda el registro primero', 'error'); return; }
+  if (!archivos.length){ notif('Selecciona al menos una foto', 'error'); return; }
 
   btnSubir.disabled = true;
   btnSubir.textContent = '⏳ Subiendo...';
-  const total = input.files.length;
-  let subidas = 0;
-  let errores = 0;
+  const total = archivos.length;
+  let subidas = 0, errores = 0;
 
-  // Mostrar barra de progreso
   progreso.innerHTML = `
     <div style="margin-bottom:6px; font-size:12px; color:var(--texto-suave);">
       <span id="prog-texto">Preparando...</span>
@@ -4015,63 +4066,64 @@ async function subirFotos() {
       <span id="prog-errores" style="color:var(--rojo); margin-left:8px;"></span>
     </div>`;
 
-  for (const file of input.files) {
-    document.getElementById('prog-texto').textContent = `Subiendo: ${file.name.substring(0,30)}...`;
+  for (const file of archivos) {
     try {
+      // 1. Leer base64
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader();
         reader.onload = e => res(e.target.result.split(',')[1]);
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      const nombre = new Date().getTime() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const nombre = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      // 2. Subir a Drive (Apps Script solo sube, sin Gemini — responde rápido)
+      document.getElementById('prog-texto').textContent = `Subiendo foto ${subidas + errores + 1}...`;
       const r = await fetch(CFG.webhook, {
         method: 'POST',
-        body: JSON.stringify({
-          accion: 'subirFoto',
-          idCarpeta: idCarpeta,
-          nombre: nombre,
-          mimeType: file.type,
-          base64: base64
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'subirFoto', idCarpeta, nombre, mimeType: file.type, base64 })
       });
       const d = await r.json();
-      if (d.ok) {
-        subidas++;
-        // Guardar referencia Drive (fileId + descripción IA) para el acta
-        ST._fotosParaActa.push({
-          fileId:      d.fileId      || '',
-          link:        d.link        || '',
-          descripcion: d.descripcion || ''
-        });
-      } else { errores++; }
-    } catch(e) { errores++; }
+      if (!d.ok) throw new Error(d.error || 'Error en Drive');
+
+      // 3. Descripción Gemini Vision desde el browser (no bloquea el upload)
+      document.getElementById('prog-texto').textContent = `Analizando foto ${subidas + 1}...`;
+      const descripcion = await describirFotoEnNavegador(base64, file.type);
+
+      subidas++;
+      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion });
+
+    } catch(e) {
+      errores++;
+      console.warn('Error en foto:', e.message);
+    }
 
     // Actualizar barra
     const pct = Math.round(((subidas + errores) / total) * 100);
     document.getElementById('prog-barra').style.width = pct + '%';
-    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--verde)';
+    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--azul)';
     document.getElementById('prog-conteo').textContent = `${subidas + errores} / ${total}`;
     if (errores > 0) document.getElementById('prog-errores').textContent = `${errores} error(es)`;
   }
 
   btnSubir.disabled = false;
-  btnSubir.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
+  btnSubir.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
 
-  if (errores === 0) {
+  if (subidas > 0) {
     ST._fotosSubidas = true;
-    document.getElementById('prog-texto').textContent = `✓ ${subidas} foto(s) subida(s) correctamente`;
-    document.getElementById('prog-barra').style.background = 'var(--verde)';
-    ST._fotosSubidas = true;
+    document.getElementById('prog-texto').textContent =
+      errores === 0 ? `✓ ${subidas} foto(s) subida(s) correctamente` : `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-barra').style.background = errores === 0 ? 'var(--verde)' : 'var(--amarillo)';
     notif(`✓ ${subidas} foto(s) en Drive`, 'exito');
-    input.value = '';
+    window._fotosSeleccionadas = [];
     document.getElementById('preview-fotos').innerHTML = '';
     btnSubir.style.display = 'none';
     actualizarPanelEstado();
   } else {
-    document.getElementById('prog-texto').textContent = `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-texto').textContent = `0 subidas · ${errores} con error`;
     document.getElementById('prog-barra').style.background = 'var(--rojo)';
-    notif(`${subidas} subidas, ${errores} con error`, 'error');
+    notif(`Error subiendo fotos — revisa la consola`, 'error');
   }
 }
 
@@ -4408,9 +4460,14 @@ async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
 }
 
 function verFotosEnDrive() {
-  const link = ST._linkCarpetaDrive;
-  if (link) window.open(link, '_blank');
-  else notif('No hay carpeta Drive asociada', 'error');
+  // Abrir directamente la carpeta de fotos (no la carpeta raíz de la visita)
+  if (ST._idCarpetaFotos) {
+    window.open('https://drive.google.com/drive/folders/' + ST._idCarpetaFotos, '_blank');
+  } else if (ST._linkCarpetaDrive) {
+    window.open(ST._linkCarpetaDrive, '_blank');
+  } else {
+    notif('No hay carpeta de fotos asociada', 'error');
+  }
 }
 
 function toggleOficio(val) {
@@ -5527,6 +5584,12 @@ function actualizarBotonesActa() {
   const btnGenPdf = document.getElementById('btn-generar-pdf-acta');
   if (btnGenPdf) {
     btnGenPdf.style.display = (esAdmin && tieneSheet && esCompletado && !tienePdf) ? '' : 'none';
+  }
+
+  // Botón Generar Acta xlsx: solo si hay carpeta y NO existe acta todavía (evitar duplicados)
+  const btnGenActa = document.getElementById('btn-generar-acta');
+  if (btnGenActa) {
+    btnGenActa.style.display = (ST._idCarpetaFotos && !tieneSheet) ? '' : 'none';
   }
 }
 
