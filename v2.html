@@ -5511,6 +5511,31 @@ async function generarActaF46Final(fotos) {
       if (ST.filaEditando && d.linkSheet) {
         await guardarLinkActaEnBD('', d.linkSheet, d.ssId);
       }
+
+      // A3.3 — Insertar fotos en hoja REGISTRO FOTOGRAFICO (si hay fotos subidas)
+      if (ST._fotosParaActa && ST._fotosParaActa.length > 0 && d.ssId) {
+        showLoading('Insertando fotos...', 'Agregando ' + ST._fotosParaActa.length + ' foto(s) al acta');
+        try {
+          const rFotos = await fetch(CFG.webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+              accion: 'llenarFotos',
+              ssId: d.ssId,
+              fechaVisita: datos.fechaVisita || '',
+              radicado:    datos.radicado    || '',
+              direccion:   datos.direccion   || '',
+              barrio:      datos.barrio      || '',
+              fotos: ST._fotosParaActa.map(f => ({ fileId: f.fileId, descripcion: f.descripcion || '' }))
+            })
+          });
+          const dFotos = await rFotos.json();
+          if (!dFotos.ok) console.warn('llenarFotos error:', dFotos.error);
+        } catch(eFotos) {
+          console.warn('Error insertando fotos en acta:', eFotos.message);
+        }
+      }
+
       hideLoading();
       actualizarPanelEstado();
       actualizarBotonesActa();
