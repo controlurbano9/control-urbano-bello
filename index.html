@@ -1650,7 +1650,7 @@ const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
   apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
   hoja:      'BD VISITAS',
-  claudeKey: '', // Cargada desde .env en tiempo de ejecución
+  claudeKey: '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',
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -3165,7 +3165,7 @@ async function mejorarRedaccion() {
   const btn = document.getElementById('btn-mejorar');
   btn.disabled = true;
   btn.textContent = '⏳ Mejorando...';
-  showLoading('Mejorando redacción con IA...', 'Procesando con Groq...');
+  showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
 
   const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia con años de experiencia. Tu tarea es mejorar el texto que te envío manteniendo mi tono y mi forma de expresarme — que suene como lo escribí yo, no como una IA.
 
@@ -3189,24 +3189,35 @@ Reglas:
   let textMejorado = null;
   let errorMsg = '';
 
-  // ── Intento 1: Claude vía Apps Script (server-side, sin CORS desde https://) ──
+  // ── Intento 1: Claude API directo desde el navegador ──
   try {
     showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
-    const resp = await fetch(CFG.webhook, {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + USER_PROMPT })
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CFG.claudeKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        system: 'Responde ÚNICAMENTE con el texto mejorado, sin explicaciones ni comentarios adicionales.',
+        messages: [{ role: 'user', content: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }]
+      })
     });
-    if (!resp.ok) throw new Error(`Apps Script HTTP ${resp.status}`);
-    const raw = await resp.text();
-    let data;
-    try { data = JSON.parse(raw); } catch(e) { throw new Error('Respuesta no-JSON: ' + raw.substring(0, 100)); }
-    const candidato = (data.texto || data.resultado || data.text || data.mejorado || data.response || '').trim();
-    if (!candidato) throw new Error(data.error || 'Respuesta vacía de Apps Script');
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Claude HTTP ${resp.status}: ${err.substring(0, 200)}`);
+    }
+    const data = await resp.json();
+    const candidato = (data?.content?.[0]?.text || '').trim();
+    if (!candidato) throw new Error('Claude devolvió respuesta vacía');
     textMejorado = candidato;
-    console.log('mejorarRedaccion: OK vía Claude (Apps Script)');
+    console.log('mejorarRedaccion: OK vía Claude directo');
   } catch(e) {
-    console.warn('mejorarRedaccion: Claude/Apps Script falló:', e.message);
+    console.warn('mejorarRedaccion: Claude directo falló:', e.message);
     errorMsg = e.message;
   }
 
