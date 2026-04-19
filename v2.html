@@ -4077,11 +4077,11 @@ async function subirFotos() {
       });
       const nombre = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-      // 2. Subir a Drive (Apps Script solo sube, sin Gemini — responde rápido)
+      // 2. Subir a Drive — text/plain evita preflight CORS (igual que generarActa)
       document.getElementById('prog-texto').textContent = `Subiendo foto ${subidas + errores + 1}...`;
       const r = await fetch(CFG.webhook, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ accion: 'subirFoto', idCarpeta, nombre, mimeType: file.type, base64 })
       });
       const d = await r.json();
