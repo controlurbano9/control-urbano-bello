@@ -5525,12 +5525,12 @@ async function generarActaF46Final(fotos) {
     showLoading('Generando acta F-GGO-46...', 'Esto puede tardar 30-60 segundos');
     const datos = recopilarDatosF46();
 
-    // Agregar fotos con descripciones finales
+    // Las fotos del panel usan fileId (f.id viene de listarYDescribirFotos)
+    // NO se pasa base64 para evitar payload enorme y doble inserción
     datos.fotos = fotos.map(f => ({
-      base64:      f.base64,
-      mimeType:    f.mimeType,
-      descripcion: f.descripcionFinal || f.descripcion
-    }));
+      fileId:      f.id || f.fileId || null,
+      descripcion: f.descripcionFinal || f.descripcion || ''
+    })).filter(f => f.fileId); // solo fotos con fileId válido
 
     // Carpeta de la visita (padre de Fotos) para guardar el acta
     datos.idCarpetaVisita = ST._idCarpetaVisita || null;
@@ -5556,8 +5556,11 @@ async function generarActaF46Final(fotos) {
         await guardarLinkActaEnBD('', d.linkSheet, d.ssId);
       }
 
-      // A3.3 — Insertar fotos en hoja REGISTRO FOTOGRAFICO (si hay fotos subidas)
-      if (ST._fotosParaActa && ST._fotosParaActa.length > 0 && d.ssId) {
+      // A3.3 — llenarFotos solo si NO se usó el panel (fotos del panel ya van en generarActa)
+      // Si el panel tenía fotos (datos.fotos.length > 0), ya se insertaron arriba.
+      // Si no había panel, insertar desde ST._fotosParaActa (subidas en esta sesión).
+      const panelTeniaFotos = datos.fotos.length > 0;
+      if (!panelTeniaFotos && ST._fotosParaActa && ST._fotosParaActa.length > 0 && d.ssId) {
         showLoading('Insertando fotos...', 'Agregando ' + ST._fotosParaActa.length + ' foto(s) al acta');
         try {
           const rFotos = await fetch(CFG.webhook, {
