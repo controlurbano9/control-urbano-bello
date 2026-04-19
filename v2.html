@@ -1661,7 +1661,7 @@ const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
   apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
   hoja:      'BD VISITAS',
-  claudeKey: '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',
+  // claudeKey eliminada del HTML — la clave vive solo en Apps Script (nunca en GitHub)
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -3183,6 +3183,9 @@ function normalizarDireccionGoogle(dir) {
 // ═══════════════════════════════════════════
 // MEJORAR REDACCIÓN CON IA
 // ═══════════════════════════════════════════
+// Flujo: 1) Claude vía webhook (clave en Apps Script, no expuesta)
+//         2) Groq directo (fallback)
+//         3) Gemini directo (último recurso)
 async function mejorarRedaccion() {
   const textarea = document.getElementById('transcripcion');
   const texto = textarea.value.trim();
@@ -3190,7 +3193,6 @@ async function mejorarRedaccion() {
   const btn = document.getElementById('btn-mejorar');
   btn.disabled = true;
   btn.textContent = '⏳ Mejorando...';
-  showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
 
   const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia con años de experiencia. Tu tarea es mejorar el texto que te envío manteniendo mi tono y mi forma de expresarme — que suene como lo escribí yo, no como una IA.
 
@@ -3209,40 +3211,26 @@ Reglas:
 - NO inventes ni agregues información que no esté en el texto original
 - Responde SOLO con el texto reescrito, sin explicaciones ni comentarios`;
 
-  const USER_PROMPT = texto;
-
   let textMejorado = null;
   let errorMsg = '';
 
-  // ── Intento 1: Claude API directo desde el navegador ──
+  // ── Intento 1: Claude vía webhook (clave guardada en Apps Script, nunca en el HTML) ──
   try {
     showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(CFG.webhook, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CFG.claudeKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        system: 'Responde ÚNICAMENTE con el texto mejorado, sin explicaciones ni comentarios adicionales.',
-        messages: [{ role: 'user', content: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }]
-      })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + texto })
     });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`Claude HTTP ${resp.status}: ${err.substring(0, 200)}`);
+    const d = await resp.json();
+    if (d.ok && d.texto) {
+      textMejorado = d.texto;
+      console.log('mejorarRedaccion: OK vía Claude (webhook)');
+    } else {
+      throw new Error(d.error || 'Sin respuesta');
     }
-    const data = await resp.json();
-    const candidato = (data?.content?.[0]?.text || '').trim();
-    if (!candidato) throw new Error('Claude devolvió respuesta vacía');
-    textMejorado = candidato;
-    console.log('mejorarRedaccion: OK vía Claude directo');
   } catch(e) {
-    console.warn('mejorarRedaccion: Claude directo falló:', e.message);
+    console.log('mejorarRedaccion: Claude webhook falló, usando Groq...', e.message);
     errorMsg = e.message;
   }
 
@@ -3260,20 +3248,17 @@ Reglas:
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: USER_PROMPT }
+            { role: 'user', content: texto }
           ],
           max_tokens: 600,
           temperature: 0.3
         })
       });
-      if (!resp.ok) {
-        const err = await resp.text();
-        throw new Error(`Groq HTTP ${resp.status}: ${err.substring(0, 200)}`);
-      }
+      if (!resp.ok) throw new Error(`Groq HTTP ${resp.status}`);
       const data = await resp.json();
       textMejorado = data?.choices?.[0]?.message?.content?.trim() || null;
       if (!textMejorado) throw new Error('Groq devolvió respuesta vacía');
-      console.log('mejorarRedaccion: OK vía Groq (fallback)');
+      console.log('mejorarRedaccion: OK vía Groq');
     } catch(e) {
       console.warn('mejorarRedaccion: Groq falló:', e.message);
       errorMsg += ' | Groq: ' + e.message;
@@ -3284,24 +3269,20 @@ Reglas:
   if (!textMejorado) {
     try {
       showLoading('Mejorando redacción con IA...', 'Usando Gemini como último recurso...');
-      const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64`;
       const resp2 = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }] }],
+          contents: [{ parts: [{ text: SYSTEM_PROMPT + '\n\n' + texto }] }],
           generationConfig: { maxOutputTokens: 600, temperature: 0.3 }
         })
       });
-      if (!resp2.ok) {
-        const err2 = await resp2.text();
-        throw new Error(`Gemini HTTP ${resp2.status}: ${err2.substring(0, 200)}`);
-      }
+      if (!resp2.ok) throw new Error(`Gemini HTTP ${resp2.status}`);
       const data2 = await resp2.json();
       textMejorado = data2?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
       if (!textMejorado) throw new Error('Gemini devolvió respuesta vacía');
-      console.log('mejorarRedaccion: OK vía Gemini (último recurso)');
+      console.log('mejorarRedaccion: OK vía Gemini');
     } catch(e2) {
       console.error('mejorarRedaccion: Gemini también falló:', e2.message);
       errorMsg += ' | Gemini: ' + e2.message;
@@ -3317,7 +3298,6 @@ Reglas:
     if (conf) textarea.value = textMejorado;
   } else {
     notif('No se pudo mejorar el texto. Verifica tu conexión.', 'error');
-    console.error('mejorarRedaccion: todos los intentos fallaron:', errorMsg);
   }
 }
 
