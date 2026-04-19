@@ -1535,15 +1535,26 @@
       <button class="btn-principal azul" id="btn-ver-acta-pdf" style="display:none; background:#0F4C81;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta</button>
       <button class="btn-principal azul" id="btn-ver-pdf-acta" style="display:none; background:#7B2D00;" onclick="window.open(ST._linkPdfActa,'_blank')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver PDF</button>
       <button class="btn-principal" id="btn-generar-pdf-acta" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);" onclick="generarPdfDesdeSheet()"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Generar PDF (Admin)</button>
+      <button class="btn-principal" id="btn-insertar-fotos-acta" onclick="insertarFotosEnActa()" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Insertar fotos en acta</button>
       <button class="btn-principal gris" onclick="irA('pantalla-home'); setNav('nav-home')" style="margin-bottom:24px;"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Cancelar</button>
 
       <!-- FOTOS -->
       <div class="form-seccion" id="seccion-fotos" style="display:none;">
-        <span class="form-seccion-titulo titulo-azul">📁 Carpeta de visita</span>
-        <!-- V1: sin subida de fotos — disponible en V2 -->
-        <div id="bloque-subir-fotos" style="display:none;"></div>
-        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:4px;">
-          <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver carpeta en Drive
+        <span class="form-seccion-titulo titulo-azul">📷 Registro fotográfico</span>
+        <div id="bloque-subir-fotos">
+          <div class="input-grupo">
+            <label class="input-label">Agregar fotos (se analizan con IA automáticamente)</label>
+            <input type="file" id="input-fotos" accept="image/*" multiple
+              class="input-campo" style="padding:8px;" onchange="previsualizarFotos(this)">
+          </div>
+          <div id="preview-fotos" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+          <button class="btn-principal azul" onclick="subirFotos()" id="btn-subir-fotos" style="display:none; margin-top:8px;">
+            <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive
+          </button>
+          <div id="progreso-fotos" style="font-size:12px; color:var(--texto-suave); margin-top:6px;"></div>
+        </div>
+        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:8px;">
+          <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver fotos en Drive
         </button>
       </div>
 
@@ -1650,7 +1661,7 @@ const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
   apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
   hoja:      'BD VISITAS',
-  claudeKey: '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',
+  claudeKey: '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',
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -1683,6 +1694,7 @@ let ST = {
   _linkCarpetaDrive: null,
   _cargosUsuarios: {},
   _fotosSubidas: false,
+  _fotosParaActa: [],   // [{ fileId, link, descripcion }] — guardado al subir
   _ssIdActa: null,
   _linkSheetActa: null,
   _actaGenerada: false,
@@ -2322,6 +2334,7 @@ function prepararFormulario(fila, filaIdx) {
     ST._ssIdActa = null;
     ST._linkSheetActa = null;
     ST._fotosSubidas = false;
+    ST._fotosParaActa = [];
     ST._actaGenerada = false;
     ST._informeGenerado = false;
     // Ocultar panel de estado
@@ -2393,6 +2406,16 @@ function prepararFormulario(fila, filaIdx) {
     const linkD = fila['LINK_DRIVE'] || fila[55] || '';
     ST._fotosSubidas = !!(linkD);
     ST._linkCarpetaDrive = linkD;
+    // Si hay carpeta Drive, extraer ID raíz y mostrar sección fotos de inmediato
+    // (el ID de la subcarpeta Fotos se obtiene async, pero no bloqueamos la UI)
+    if (linkD) {
+      const matchCarpetaRaiz = linkD.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (matchCarpetaRaiz) ST._idCarpetaVisita = matchCarpetaRaiz[1];
+      const secFotosInm = document.getElementById('seccion-fotos');
+      const btnVerDriveInm = document.getElementById('btn-ver-fotos-drive');
+      if (secFotosInm) secFotosInm.style.display = 'block';
+      if (btnVerDriveInm) btnVerDriveInm.style.display = 'block';
+    }
     // Cargar links de acta si existen en BD
     ST._linkXlsxActa  = fila['LINK_XLSX_ACTA'] || fila[57] || '';
     ST._linkSheetActa = ST._linkXlsxActa;
@@ -2414,12 +2437,14 @@ function prepararFormulario(fila, filaIdx) {
     document.getElementById('info-nvisita').textContent = '✓ Editando Visita N°' + ST.nVisita + ' · ' + (fila['RADICADO']||fila[1]||'');
     document.getElementById('info-nvisita').style.background = 'var(--azul-bg)';
     document.getElementById('info-nvisita').style.color = 'var(--azul)';
-    // Botón Ver radicado PDF si existe link
+    // Botón Ver radicado PDF — leer directo de la columna LINK_PDF_RADICADO (igual que V1)
     const linkPdfRad = fila['LINK_PDF_RADICADO'] || fila[60] || '';
     const btnVerRad = document.getElementById('btn-ver-radicado-pdf');
     if (btnVerRad) {
       if (linkPdfRad) {
         btnVerRad.style.display = 'inline-flex';
+        btnVerRad.disabled = false;
+        btnVerRad.innerHTML = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg> Ver radicado PDF`;
         btnVerRad.onclick = () => window.open(linkPdfRad, '_blank');
       } else {
         btnVerRad.style.display = 'none';
@@ -3941,43 +3966,94 @@ function toggleCitacion(check) {
 }
 
 // ═══════════════════════════════════════════
-// FOTOS — Preview y subida a Drive
+// FOTOS — Preview con X + subida a Drive + descripción Gemini
 // ═══════════════════════════════════════════
+
+// Almacén temporal de archivos seleccionados (permite eliminar antes de subir)
+window._fotosSeleccionadas = [];
+
 function previsualizarFotos(input) {
-  const preview = document.getElementById('preview-fotos');
+  if (!input.files.length) return;
+  // Agregar nuevos archivos al arreglo existente (no reemplazar)
+  Array.from(input.files).forEach(f => window._fotosSeleccionadas.push(f));
+  input.value = ''; // limpiar input para permitir re-selección del mismo archivo
+  renderizarPreviewFotos();
+}
+
+function renderizarPreviewFotos() {
+  const preview  = document.getElementById('preview-fotos');
   const btnSubir = document.getElementById('btn-subir-fotos');
+  const progreso = document.getElementById('progreso-fotos');
   preview.innerHTML = '';
-  if (!input.files.length) { btnSubir.style.display = 'none'; return; }
-  Array.from(input.files).forEach(file => {
+  const archivos = window._fotosSeleccionadas;
+  if (!archivos.length) {
+    btnSubir.style.display = 'none';
+    progreso.innerHTML = '';
+    return;
+  }
+  archivos.forEach((file, idx) => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde);';
-      preview.appendChild(img);
+    reader.onload = ev => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0;';
+      wrap.innerHTML = `
+        <img src="${ev.target.result}"
+          style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde); display:block;">
+        <button onclick="eliminarFotoPreview(${idx})"
+          style="position:absolute; top:-5px; right:-5px; background:var(--rojo,#e53e3e);
+                 color:white; border:none; border-radius:50%; width:18px; height:18px;
+                 font-size:10px; font-weight:700; cursor:pointer; line-height:18px;
+                 text-align:center; padding:0;">✕</button>`;
+      preview.appendChild(wrap);
     };
     reader.readAsDataURL(file);
   });
   btnSubir.style.display = 'block';
-  document.getElementById('progreso-fotos').innerHTML = `<span style="color:var(--texto-suave)">${input.files.length} foto(s) seleccionada(s)</span>`;
+  progreso.innerHTML = `<span style="color:var(--texto-suave)">${archivos.length} foto(s) seleccionada(s)</span>`;
+}
+
+function eliminarFotoPreview(idx) {
+  window._fotosSeleccionadas.splice(idx, 1);
+  renderizarPreviewFotos();
+}
+
+// Descripción IA desde el browser — evita timeout de Apps Script
+async function describirFotoEnNavegador(base64, mimeType) {
+  try {
+    const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { text: 'Describe esta fotografía de inspección de obra en máximo 8 palabras en español. Solo palabras clave, sin puntuación ni comentarios.' },
+            { inline_data: { mime_type: mimeType, data: base64 } }
+          ]}],
+          generationConfig: { maxOutputTokens: 30, temperature: 0.2 }
+        })
+      }
+    );
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  } catch(e) { return ''; }
 }
 
 async function subirFotos() {
-  const input = document.getElementById('input-fotos');
-  const progreso = document.getElementById('progreso-fotos');
-  const btnSubir = document.getElementById('btn-subir-fotos');
+  const archivos  = window._fotosSeleccionadas;
+  const progreso  = document.getElementById('progreso-fotos');
+  const btnSubir  = document.getElementById('btn-subir-fotos');
   const idCarpeta = ST._idCarpetaFotos;
 
-  if (!idCarpeta) { notif('Guarda el registro primero', 'error'); return; }
-  if (!input.files.length) { notif('Selecciona al menos una foto', 'error'); return; }
+  if (!idCarpeta)      { notif('Guarda el registro primero', 'error'); return; }
+  if (!archivos.length){ notif('Selecciona al menos una foto', 'error'); return; }
 
   btnSubir.disabled = true;
   btnSubir.textContent = '⏳ Subiendo...';
-  const total = input.files.length;
-  let subidas = 0;
-  let errores = 0;
+  const total = archivos.length;
+  let subidas = 0, errores = 0;
 
-  // Mostrar barra de progreso
   progreso.innerHTML = `
     <div style="margin-bottom:6px; font-size:12px; color:var(--texto-suave);">
       <span id="prog-texto">Preparando...</span>
@@ -3990,55 +4066,107 @@ async function subirFotos() {
       <span id="prog-errores" style="color:var(--rojo); margin-left:8px;"></span>
     </div>`;
 
-  for (const file of input.files) {
-    document.getElementById('prog-texto').textContent = `Subiendo: ${file.name.substring(0,30)}...`;
+  for (const file of archivos) {
     try {
+      // 1. Leer base64
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader();
         reader.onload = e => res(e.target.result.split(',')[1]);
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      const nombre = new Date().getTime() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const nombre = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      // 2. Subir a Drive — text/plain evita preflight CORS (igual que generarActa)
+      document.getElementById('prog-texto').textContent = `Subiendo foto ${subidas + errores + 1}...`;
       const r = await fetch(CFG.webhook, {
         method: 'POST',
-        body: JSON.stringify({
-          accion: 'subirFoto',
-          idCarpeta: idCarpeta,
-          nombre: nombre,
-          mimeType: file.type,
-          base64: base64
-        })
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ accion: 'subirFoto', idCarpeta, nombre, mimeType: file.type, base64 })
       });
       const d = await r.json();
-      if (d.ok) subidas++; else errores++;
-    } catch(e) { errores++; }
+      if (!d.ok) throw new Error(d.error || 'Error en Drive');
+
+      // 3. Descripción Gemini Vision desde el browser (no bloquea el upload)
+      document.getElementById('prog-texto').textContent = `Analizando foto ${subidas + 1}...`;
+      const descripcion = await describirFotoEnNavegador(base64, file.type);
+
+      subidas++;
+      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion });
+
+    } catch(e) {
+      errores++;
+      console.warn('Error en foto:', e.message);
+    }
 
     // Actualizar barra
     const pct = Math.round(((subidas + errores) / total) * 100);
     document.getElementById('prog-barra').style.width = pct + '%';
-    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--verde)';
+    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--azul)';
     document.getElementById('prog-conteo').textContent = `${subidas + errores} / ${total}`;
     if (errores > 0) document.getElementById('prog-errores').textContent = `${errores} error(es)`;
   }
 
   btnSubir.disabled = false;
-  btnSubir.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
+  btnSubir.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
 
-  if (errores === 0) {
+  if (subidas > 0) {
     ST._fotosSubidas = true;
-    document.getElementById('prog-texto').textContent = `✓ ${subidas} foto(s) subida(s) correctamente`;
-    document.getElementById('prog-barra').style.background = 'var(--verde)';
-    ST._fotosSubidas = true;
+    document.getElementById('prog-texto').textContent =
+      errores === 0 ? `✓ ${subidas} foto(s) subida(s) correctamente` : `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-barra').style.background = errores === 0 ? 'var(--verde)' : 'var(--amarillo)';
     notif(`✓ ${subidas} foto(s) en Drive`, 'exito');
-    input.value = '';
+    window._fotosSeleccionadas = [];
     document.getElementById('preview-fotos').innerHTML = '';
     btnSubir.style.display = 'none';
     actualizarPanelEstado();
   } else {
-    document.getElementById('prog-texto').textContent = `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-texto').textContent = `0 subidas · ${errores} con error`;
     document.getElementById('prog-barra').style.background = 'var(--rojo)';
-    notif(`${subidas} subidas, ${errores} con error`, 'error');
+    notif(`Error subiendo fotos — revisa la consola`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// INSERTAR FOTOS EN ACTA YA GENERADA
+// ═══════════════════════════════════════════
+async function insertarFotosEnActa() {
+  if (!ST._ssIdActa) { notif('No hay acta generada', 'error'); return; }
+  if (!ST._fotosParaActa || !ST._fotosParaActa.length) { notif('No hay fotos subidas en esta sesión', 'error'); return; }
+
+  const btn = document.getElementById('btn-insertar-fotos-acta');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Insertando...'; }
+  showLoading('Insertando fotos...', 'Agregando ' + ST._fotosParaActa.length + ' foto(s) al acta');
+
+  try {
+    const datos = recopilarDatosF46();
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        accion: 'llenarFotos',
+        ssId: ST._ssIdActa,
+        fechaVisita: datos.fechaVisita || '',
+        radicado:    datos.radicado    || '',
+        direccion:   datos.direccion   || '',
+        barrio:      datos.barrio      || '',
+        fotos: ST._fotosParaActa.map(f => ({ fileId: f.fileId, descripcion: f.descripcion || '' }))
+      })
+    });
+    const d = await r.json();
+    hideLoading();
+    if (d.ok) {
+      notif('✅ Fotos insertadas en el acta', 'exito');
+      ST._fotosParaActa = []; // limpiar para no reinsertar
+      actualizarBotonesActa();
+    } else {
+      notif('Error: ' + (d.error || 'Error desconocido'), 'error');
+    }
+  } catch(e) {
+    hideLoading();
+    notif('Error de conexión: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Insertar fotos en acta'; }
   }
 }
 
@@ -4375,9 +4503,14 @@ async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
 }
 
 function verFotosEnDrive() {
-  const link = ST._linkCarpetaDrive;
-  if (link) window.open(link, '_blank');
-  else notif('No hay carpeta Drive asociada', 'error');
+  // Abrir directamente la carpeta de fotos (no la carpeta raíz de la visita)
+  if (ST._idCarpetaFotos) {
+    window.open('https://drive.google.com/drive/folders/' + ST._idCarpetaFotos, '_blank');
+  } else if (ST._linkCarpetaDrive) {
+    window.open(ST._linkCarpetaDrive, '_blank');
+  } else {
+    notif('No hay carpeta de fotos asociada', 'error');
+  }
 }
 
 function toggleOficio(val) {
@@ -5391,12 +5524,15 @@ async function generarActaF46Final(fotos) {
     showLoading('Generando acta F-GGO-46...', 'Esto puede tardar 30-60 segundos');
     const datos = recopilarDatosF46();
 
-    // Agregar fotos con descripciones finales
+    // Las fotos del panel: incluir fileId + base64/mimeType como fallback
+    // El Apps Script usa fileId si puede acceder; si falla, usa base64.
+    // NO llamar llenarFotos por separado si el panel tenía fotos (evita doble inserción).
     datos.fotos = fotos.map(f => ({
-      base64:      f.base64,
-      mimeType:    f.mimeType,
-      descripcion: f.descripcionFinal || f.descripcion
-    }));
+      fileId:      f.id || f.fileId || null,
+      base64:      f.base64   || null,
+      mimeType:    f.mimeType || 'image/jpeg',
+      descripcion: f.descripcionFinal || f.descripcion || ''
+    })).filter(f => f.fileId || f.base64); // al menos uno de los dos
 
     // Carpeta de la visita (padre de Fotos) para guardar el acta
     datos.idCarpetaVisita = ST._idCarpetaVisita || null;
@@ -5421,6 +5557,34 @@ async function generarActaF46Final(fotos) {
       if (ST.filaEditando && d.linkSheet) {
         await guardarLinkActaEnBD('', d.linkSheet, d.ssId);
       }
+
+      // A3.3 — llenarFotos solo si NO se usó el panel (fotos del panel ya van en generarActa)
+      // Si el panel tenía fotos (datos.fotos.length > 0), ya se insertaron arriba.
+      // Si no había panel, insertar desde ST._fotosParaActa (subidas en esta sesión).
+      const panelTeniaFotos = datos.fotos.length > 0;
+      if (!panelTeniaFotos && ST._fotosParaActa && ST._fotosParaActa.length > 0 && d.ssId) {
+        showLoading('Insertando fotos...', 'Agregando ' + ST._fotosParaActa.length + ' foto(s) al acta');
+        try {
+          const rFotos = await fetch(CFG.webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+              accion: 'llenarFotos',
+              ssId: d.ssId,
+              fechaVisita: datos.fechaVisita || '',
+              radicado:    datos.radicado    || '',
+              direccion:   datos.direccion   || '',
+              barrio:      datos.barrio      || '',
+              fotos: ST._fotosParaActa.map(f => ({ fileId: f.fileId, descripcion: f.descripcion || '' }))
+            })
+          });
+          const dFotos = await rFotos.json();
+          if (!dFotos.ok) console.warn('llenarFotos error:', dFotos.error);
+        } catch(eFotos) {
+          console.warn('Error insertando fotos en acta:', eFotos.message);
+        }
+      }
+
       hideLoading();
       actualizarPanelEstado();
       actualizarBotonesActa();
@@ -5467,10 +5631,10 @@ function actualizarBotonesActa() {
   const tienePdf     = !!ST._linkPdfActa;
   const esAdmin      = ST.rol === 'ADMIN';
 
-  // Botón Sheet: visible solo ANTES de COMPLETADO
+  // Botón "Abrir Acta": visible si hay sheet Y no hay PDF todavía (antes de COMPLETADO o siempre que no haya PDF)
   const btnVerSheet = document.getElementById('btn-ver-acta-pdf');
   if (btnVerSheet) {
-    if (tieneSheet && !esCompletado) {
+    if (tieneSheet && !tienePdf) {
       btnVerSheet.style.display = '';
       btnVerSheet.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta';
       btnVerSheet.onclick = () => window.open(linkSheet, '_blank');
@@ -5494,6 +5658,20 @@ function actualizarBotonesActa() {
   const btnGenPdf = document.getElementById('btn-generar-pdf-acta');
   if (btnGenPdf) {
     btnGenPdf.style.display = (esAdmin && tieneSheet && esCompletado && !tienePdf) ? '' : 'none';
+  }
+
+  // Botón Generar Acta xlsx: solo si hay carpeta Y no existe acta aún (ningún link ni flag)
+  const btnGenActa = document.getElementById('btn-generar-acta');
+  if (btnGenActa) {
+    const yaHayActa = tieneSheet || tienePdf || ST._actaGenerada || !!ST._ssIdActa;
+    btnGenActa.style.display = (ST._idCarpetaFotos && !yaHayActa) ? '' : 'none';
+  }
+
+  // Botón Insertar fotos en acta: visible si hay acta generada y fotos subidas en esta sesión
+  const btnInsertarFotos = document.getElementById('btn-insertar-fotos-acta');
+  if (btnInsertarFotos) {
+    const tieneFotosParaActa = ST._fotosParaActa && ST._fotosParaActa.length > 0;
+    btnInsertarFotos.style.display = (tieneSheet && tieneFotosParaActa) ? '' : 'none';
   }
 }
 
