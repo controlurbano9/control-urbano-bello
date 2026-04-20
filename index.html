@@ -1650,7 +1650,7 @@ const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
   apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
   hoja:      'BD VISITAS',
-  claudeKey: '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',
+  // claudeKey eliminada — la clave vive solo en Apps Script (nunca en el HTML)
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -3189,35 +3189,20 @@ Reglas:
   let textMejorado = null;
   let errorMsg = '';
 
-  // ── Intento 1: Claude API directo desde el navegador ──
+  // ── Intento 1: Claude vía webhook (clave guardada en Apps Script, nunca en el HTML) ──
   try {
     showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(CFG.webhook, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CFG.claudeKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        system: 'Responde ÚNICAMENTE con el texto mejorado, sin explicaciones ni comentarios adicionales.',
-        messages: [{ role: 'user', content: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }]
-      })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + USER_PROMPT })
     });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`Claude HTTP ${resp.status}: ${err.substring(0, 200)}`);
-    }
-    const data = await resp.json();
-    const candidato = (data?.content?.[0]?.text || '').trim();
-    if (!candidato) throw new Error('Claude devolvió respuesta vacía');
-    textMejorado = candidato;
-    console.log('mejorarRedaccion: OK vía Claude directo');
+    const d = await resp.json();
+    if (!d.ok || !d.texto) throw new Error(d.error || 'Respuesta vacía del webhook');
+    textMejorado = d.texto.trim();
+    console.log('mejorarRedaccion: OK vía Claude (webhook)');
   } catch(e) {
-    console.warn('mejorarRedaccion: Claude directo falló:', e.message);
+    console.warn('mejorarRedaccion: Claude webhook falló, usando Groq...', e.message);
     errorMsg = e.message;
   }
 
