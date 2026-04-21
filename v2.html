@@ -2915,7 +2915,7 @@ async function guardarRegistro() {
       const btnF43 = document.getElementById('btn-generar-informe');
       if (secFotos) { secFotos.style.display = 'block'; }
       if (btnVerDrive && ST._linkCarpetaDrive) btnVerDrive.style.display = 'block';
-      if (btnF46) btnF46.style.display = '';
+      actualizarBotonesActa(); // calcula correctamente según yaHayActa
       if (btnF43) btnF43.style.display = '';
     }
     // Actualizar panel de estado
@@ -3877,8 +3877,7 @@ function desbloquearCamposVisita() {
   // Restaurar botones de acción
   const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
   if (btnGuardar) { btnGuardar.style.display = ''; btnGuardar.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg></span> Guardar registro'; }
-  const btnF46 = document.querySelector('[onclick="descargarF46xlsx()"]');
-  if (btnF46) btnF46.style.display = ST._idCarpetaFotos ? '' : 'none';
+  actualizarBotonesActa(); // calcula correctamente según yaHayActa e idCarpetaFotos
   const btnF43 = document.getElementById('btn-generar-informe');
   if (btnF43) btnF43.style.display = ST._idCarpetaFotos ? '' : 'none';
 
@@ -4140,17 +4139,103 @@ async function subirFotos() {
 // ═══════════════════════════════════════════
 // GENERAR REGISTRO FOTOGRÁFICO EN GOOGLE DOCS
 // Botón: btn-insertar-fotos-acta
-// Disponible cuando hay acta Sheet generada + fotos subidas.
+// Carga las fotos desde Drive (no depende de la sesión actual).
+// Muestra panel de revisión/edición de descripciones IA.
 // Si el Doc ya existe en Drive, devuelve el existente (sin duplicar).
 // ═══════════════════════════════════════════
 async function insertarFotosEnActa() {
-  if (!ST._ssIdActa) { notif('No hay acta generada', 'error'); return; }
-  const fotosDisponibles = (ST._fotosParaActa || []).filter(f => f.fileId || f.id);
-  if (!fotosDisponibles.length) { notif('No hay fotos subidas en esta sesión', 'error'); return; }
+  if (!ST._linkSheetActa && !ST._ssIdActa) {
+    notif('Primero genera el acta (F-GGO-46)', 'error'); return;
+  }
+  if (!ST._idCarpetaFotos) {
+    notif('No hay carpeta de fotos asociada a esta visita', 'error'); return;
+  }
 
+  showLoading('Cargando fotos desde Drive...', 'Analizando con IA — puede tardar unos segundos');
+  try {
+    const url = CFG.webhook + '?accion=listarFotosActa&idCarpeta=' + encodeURIComponent(ST._idCarpetaFotos);
+    const r = await fetch(url);
+    const d = await r.json();
+    hideLoading();
+    if (d.ok && d.fotos && d.fotos.length > 0) {
+      mostrarPanelRF(d.fotos);
+    } else {
+      notif('No se encontraron fotos en la carpeta de Drive', 'aviso');
+    }
+  } catch(e) {
+    hideLoading();
+    notif('Error cargando fotos: ' + e.message, 'error');
+  }
+}
+
+// Panel de revisión de fotos exclusivo para el Registro Fotográfico
+function mostrarPanelRF(fotos) {
+  const modal = document.createElement('div');
+  modal.id = 'modal-rf-fotos';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:16px; overflow-y:auto;
+  `;
+  const contenido = document.createElement('div');
+  contenido.style.cssText = `
+    background:white; border-radius:12px; padding:20px; width:100%;
+    max-width:600px; margin:auto;
+  `;
+  contenido.innerHTML = `
+    <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
+    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;">
+      Revisa y edita las descripciones generadas por IA antes de insertar en el Doc
+    </div>
+    <div id="grid-rf-revision" style="display:flex; flex-direction:column; gap:12px;"></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button onclick="confirmarRFConFotos()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
+        ✅ Confirmar y generar registro
+      </button>
+      <button onclick="document.getElementById('modal-rf-fotos').remove()" style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
+        Cancelar
+      </button>
+    </div>
+  `;
+  modal.appendChild(contenido);
+  document.body.appendChild(modal);
+
+  const grid = document.getElementById('grid-rf-revision');
+  fotos.forEach((foto, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
+    item.innerHTML = `
+      <img src="data:${foto.mimeType};base64,${foto.base64}"
+        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+      <div style="flex:1;">
+        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
+        <input type="text" value="${(foto.descripcion || '').replace(/"/g, '&quot;')}"
+          id="desc-rf-${i}"
+          maxlength="60"
+          placeholder="Descripción (máx. 8 palabras)"
+          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
+      </div>
+    `;
+    grid.appendChild(item);
+  });
+
+  window._fotosRevisionRF = fotos;
+}
+
+function confirmarRFConFotos() {
+  const fotos = window._fotosRevisionRF || [];
+  fotos.forEach((foto, i) => {
+    const input = document.getElementById('desc-rf-' + i);
+    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion) : foto.descripcion;
+  });
+  document.getElementById('modal-rf-fotos')?.remove();
+  _generarRFDocFinal(fotos);
+}
+
+async function _generarRFDocFinal(fotos) {
   const btn = document.getElementById('btn-insertar-fotos-acta');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
-  showLoading('Generando registro fotográfico...', 'Insertando ' + fotosDisponibles.length + ' foto(s) en Google Docs');
+  showLoading('Generando registro fotográfico...', 'Insertando ' + fotos.length + ' foto(s) en Google Docs');
 
   try {
     const datos = recopilarDatosF46();
@@ -4164,22 +4249,22 @@ async function insertarFotosEnActa() {
         direccion:       datos.direccion   || '',
         barrio:          datos.barrio      || '',
         idCarpetaVisita: ST._idCarpetaVisita || null,
-        fotos: fotosDisponibles.map(f => ({
-          fileId:      f.fileId || f.id,
-          descripcion: f.descripcion || ''
+        fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
+          fileId:      f.id || f.fileId,
+          descripcion: f.descripcionFinal || f.descripcion || ''
         }))
       })
     });
     const d = await r.json();
     hideLoading();
     if (d.ok) {
-      ST._docIdRegistroFotos   = d.docId   || '';
-      ST._linkDocRegistroFotos = d.linkDoc  || '';
+      ST._docIdRegistroFotos   = d.docId  || '';
+      ST._linkDocRegistroFotos = d.linkDoc || '';
       actualizarBotonesActa();
-      const msg = d.yaExistia
-        ? '⚠️ El registro fotográfico ya existía en Drive'
-        : '✅ Registro fotográfico generado en Google Docs';
-      notif(msg, d.yaExistia ? 'aviso' : 'exito');
+      notif(
+        d.yaExistia ? '⚠️ El registro fotográfico ya existía en Drive' : '✅ Registro fotográfico generado en Google Docs',
+        d.yaExistia ? 'aviso' : 'exito'
+      );
     } else {
       notif('Error: ' + (d.error || 'Error desconocido'), 'error');
     }
@@ -4523,9 +4608,8 @@ async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
     if (d.ok && d.idFotos) {
       ST._idCarpetaFotos = d.idFotos;
       if (secFotos) secFotos.style.display = 'block';
-      // Mostrar botones acta e informe ahora que tenemos carpeta Drive
-      const btnF46 = document.querySelector('[onclick="descargarF46xlsx()"]');
-      if (btnF46) btnF46.style.display = '';
+      // Actualizar botones con lógica completa (respeta yaHayActa, etc.)
+      actualizarBotonesActa();
       const btnF43 = document.getElementById('btn-generar-informe');
       if (btnF43 && !soloLectura) btnF43.style.display = '';
       if (soloLectura) {
@@ -5605,53 +5689,8 @@ async function generarActaF46Final(fotos) {
 
       const msgActa = d.yaExistia
         ? '⚠️ El acta ya existía — abriendo la existente'
-        : '✅ Acta generada';
+        : '✅ Acta generada — usa el botón "Registro fotográfico" para el Doc con fotos';
       notif(msgActa, d.yaExistia ? 'aviso' : 'exito');
-
-      // ── Paso 2: Registro fotográfico en Google Docs ───────────
-      // Se dispara automáticamente si hay fotos disponibles.
-      const fotosDisponibles = fotos.filter(f => f.id || f.fileId);
-      if (fotosDisponibles.length > 0) {
-        showLoading('Generando registro fotográfico...', 'Insertando ' + fotosDisponibles.length + ' foto(s) en Google Docs');
-        try {
-          const fotosPayload = fotosDisponibles.map(f => ({
-            fileId:      f.id || f.fileId,
-            descripcion: f.descripcionFinal || f.descripcion || ''
-          }));
-          const rRF = await fetch(CFG.webhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-              accion:          'generarRegistroFotos',
-              radicado:        datos.radicado    || '',
-              fechaVisita:     datos.fechaVisita || '',
-              direccion:       datos.direccion   || '',
-              barrio:          datos.barrio      || '',
-              idCarpetaVisita: ST._idCarpetaVisita || null,
-              fotos:           fotosPayload
-            })
-          });
-          const dRF = await rRF.json();
-          if (dRF.ok) {
-            ST._docIdRegistroFotos   = dRF.docId   || '';
-            ST._linkDocRegistroFotos = dRF.linkDoc  || '';
-            const msgRF = dRF.yaExistia
-              ? '⚠️ Registro fotográfico ya existía'
-              : '✅ Registro fotográfico generado en Google Docs';
-            notif(msgRF, dRF.yaExistia ? 'aviso' : 'exito');
-          } else {
-            console.warn('generarRegistroFotos error:', dRF.error);
-            notif('Acta creada, pero error en registro fotográfico: ' + (dRF.error || ''), 'aviso');
-          }
-        } catch(eRF) {
-          console.warn('Error generando registro fotográfico:', eRF.message);
-          notif('Acta creada. Registro fotográfico: ' + eRF.message, 'aviso');
-        }
-      } else if (ST._fotosParaActa && ST._fotosParaActa.length > 0) {
-        // Fotos subidas en esta sesión pero no pasadas por el panel
-        // Se puede usar el botón "Generar Registro Fotográfico" manualmente
-        notif('✅ Acta generada — usa "Registro fotográfico" para agregar las fotos', 'exito');
-      }
 
       hideLoading();
       actualizarPanelEstado();
@@ -5735,12 +5774,12 @@ function actualizarBotonesActa() {
   }
 
   // Botón "Registro fotográfico": genera el Doc con fotos en Google Docs.
-  // Visible si: hay acta Sheet Y hay fotos subidas en esta sesión Y no se ha generado el Doc aún.
+  // Visible si: hay acta Sheet + hay carpeta de fotos + no se ha generado el Doc aún.
+  // No depende de _fotosParaActa (sesión) — carga directo desde Drive.
   const btnInsertarFotos = document.getElementById('btn-insertar-fotos-acta');
   if (btnInsertarFotos) {
-    const tieneFotosParaActa   = ST._fotosParaActa && ST._fotosParaActa.length > 0;
-    const yaHayRegistroFotos   = !!ST._docIdRegistroFotos || !!ST._linkDocRegistroFotos;
-    btnInsertarFotos.style.display = (tieneSheet && tieneFotosParaActa && !yaHayRegistroFotos) ? '' : 'none';
+    const yaHayRegistroFotos = !!ST._docIdRegistroFotos || !!ST._linkDocRegistroFotos;
+    btnInsertarFotos.style.display = (tieneSheet && ST._idCarpetaFotos && !yaHayRegistroFotos) ? '' : 'none';
   }
 
   // Botón "Ver registro fotográfico": abre el Doc generado.
