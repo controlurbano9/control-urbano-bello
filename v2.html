@@ -2229,7 +2229,7 @@ function tarjetaRadicado(radicado, visitas) {
           </button>` : ''}
         ${estNorm === 'INICIADO' ? `
           <button class="btn-sm azul" onclick="abrirVisitaPorIdx(${visitas[visitas.length-1].i})">
-            ✏️ Completar registro
+            ✏️ Editar registro
           </button>` : ''}
         ${estNorm === 'COMPLETADO' && ST.rol === 'ADMIN' ? `
           <button class="btn-sm verde" onclick="nuevaVisitaDesde('${radicado}', [${visitas.map(v=>v.i).join(',')}])">
@@ -2454,9 +2454,9 @@ function prepararFormulario(fila, filaIdx) {
     ST._linkDocRegistroFotos = null;
     ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
     actualizarBotonesActa();
-    // Cambiar botón a "Completar registro" en modo INICIADO
+    // Cambiar botón a "Actualizar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
-    if (btnG) btnG.innerHTML = '💾 Completar registro';
+    if (btnG) btnG.innerHTML = '💾 Actualizar registro';
     setTimeout(actualizarPanelEstado, 500);
     ST.nVisita = Number(celda(fila, 16)) || 1;
 
@@ -2519,16 +2519,24 @@ function prepararFormulario(fila, filaIdx) {
       const latVal = fila['LATITUD'] || celda(fila, 48) || '';
       const lonVal = fila['LONGITUD'] || celda(fila, 49) || '';
       document.getElementById('gps-coords').textContent = latVal + ', ' + lonVal;
-      document.getElementById('gps-dir').textContent = 'Ubicación guardada';
       document.getElementById('btn-mapa').style.display = 'inline-flex';
-      // Ocultar caja GPS si ya tiene coordenadas
-      const gpsBox = document.getElementById('gps-box');
-      if (gpsBox) gpsBox.style.display = 'none';
-      const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
-      if (btnGps) { btnGps.style.display = 'none'; }
-      // Mostrar mapa con pin (arrastrable solo si no está completado)
+      // Determinar estado para decidir si GPS es editable
       const estCargando = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
       const esCompletado = estCargando === 'COMPLETADO' || estCargando === 'COMPLETADA';
+      const gpsBox = document.getElementById('gps-box');
+      const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
+      if (esCompletado) {
+        // COMPLETADO → ocultar caja GPS, pin fijo
+        document.getElementById('gps-dir').textContent = 'Ubicación guardada';
+        if (gpsBox) gpsBox.style.display = 'none';
+        if (btnGps) btnGps.style.display = 'none';
+      } else {
+        // PENDIENTE / INICIADO → mantener caja y botón visibles para permitir actualizar
+        document.getElementById('gps-dir').textContent = 'Coordenadas guardadas · puedes actualizar';
+        if (gpsBox) gpsBox.style.display = 'flex';
+        if (btnGps) { btnGps.style.display = ''; btnGps.disabled = false; btnGps.style.opacity = ''; btnGps.style.pointerEvents = ''; }
+      }
+      // Mostrar mapa con pin (arrastrable solo si no está completado)
       setTimeout(() => mostrarMapaGPS(ST.gpsLat, ST.gpsLon, !esCompletado), 200);
     }
 
@@ -2686,20 +2694,7 @@ function nuevaVisitaDesde(radicado, indices) {
 async function guardarRegistro() {
   const fechaVisitaVal = document.getElementById('f-fecha-visita').value;
 
-  // Si el botón dice "Completar registro", verificar que el panel esté completo
-  const btnActual = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnActual && btnActual.textContent.includes('Completar')) {
-    // Calcular estado del panel
-    const itemsEl = document.getElementById('estado-items');
-    if (itemsEl) {
-      const pendientes = itemsEl.querySelectorAll('[style*="var(--rojo)"]').length;
-      if (pendientes > 0) {
-        notif(`Faltan ${pendientes} sección(es) por completar`, 'error');
-        itemsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-    }
-  }
+  // Sin bloqueo por panel — el inspector puede actualizar las veces necesarias
 
   // ── Validaciones obligatorias primera visita ──────────────
   const esEdicion = !!ST.filaEditando;
@@ -2916,7 +2911,7 @@ async function guardarRegistro() {
     }
     // Después del primer guardado: cambiar botón y actualizar panel
     const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
-    if (btnGuardar) btnGuardar.innerHTML = '💾 Completar registro';
+    if (btnGuardar) btnGuardar.innerHTML = '💾 Actualizar registro';
     // Mostrar sección fotos si hay carpeta Drive
     if (ST._idCarpetaFotos) {
       const secFotos = document.getElementById('seccion-fotos');
@@ -4385,12 +4380,12 @@ function actualizarPanelEstado() {
       </div>`).join('');
   }
 
-  // Indicador en botón completar
+  // Indicador visual en botón actualizar (opacidad según completitud del panel)
   const btnCompletar = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnCompletar && btnCompletar.textContent.includes('Completar')) {
+  if (btnCompletar && btnCompletar.style.display !== 'none') {
     const pendientes = checks.filter(ch => !ch.ok).length;
     btnCompletar.style.opacity = todoOk ? '1' : '0.7';
-    btnCompletar.title = pendientes > 0 ? `Faltan ${pendientes} sección(es)` : '';
+    btnCompletar.title = pendientes > 0 ? `${pendientes} sección(es) sin completar` : '';
   }
 }
 function toggleNoAtiende(check) {
@@ -4528,7 +4523,7 @@ function aplicarModoOficina() {
   notif('Modo oficina — completa licencia, área y norma POT', 'info');
   // Cambiar botón guardar
   const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnGuardar) btnGuardar.innerHTML = '💾 Completar registro';
+  if (btnGuardar) btnGuardar.innerHTML = '💾 Actualizar registro';
 }
 
 function aplicarModoSoloLectura() {
@@ -4561,9 +4556,7 @@ function aplicarModoSoloLectura() {
   if (btnF46) btnF46.style.display = 'none';
   const btnF43 = document.getElementById('btn-generar-informe');
   if (btnF43) btnF43.style.display = 'none';
-  // Bloquear GPS
-  const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
-  if (btnGps) { btnGps.disabled = true; btnGps.style.opacity = '0.4'; btnGps.style.pointerEvents = 'none'; }
+  // GPS siempre disponible — el pin se puede mover aunque el registro esté COMPLETADO
   // Bloquear observaciones del acta
   const obsActa = document.getElementById('f-obs-acta');
   if (obsActa) { obsActa.readOnly = true; obsActa.style.background = 'var(--gris-bg)'; }
