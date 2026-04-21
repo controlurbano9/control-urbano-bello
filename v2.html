@@ -2428,26 +2428,17 @@ function prepararFormulario(fila, filaIdx) {
         fetch(`${CFG.webhook}?accion=obtenerIdFotos&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`)
           .then(r => r.json())
           .then(d => {
-            if (d.ok && d.idFotos) {
-              ST._idCarpetaFotos = d.idFotos;
-              actualizarBotonesActa(); // re-evaluar botón registro fotográfico
+            if (!d.ok) return;
+            if (d.idFotos) ST._idCarpetaFotos = d.idFotos;
+            // Si el AS encontró un acta en la carpeta y la BD no la tenía, cargarla
+            if (d.linkActa && !ST._actaGenerada) {
+              ST._linkSheetActa = d.linkActa;
+              ST._ssIdActa      = d.ssIdActa;
+              ST._actaGenerada  = true;
             }
+            actualizarBotonesActa(); // re-evaluar ambos botones con datos completos
           })
           .catch(() => {});
-        // Verificar si ya hay un acta en Drive (independiente de lo que diga la BD)
-        if (!ST._actaGenerada) {
-          fetch(`${CFG.webhook}?accion=buscarActaEnCarpeta&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`)
-            .then(r => r.json())
-            .then(d => {
-              if (d.ok && d.link) {
-                ST._linkSheetActa = d.link;
-                ST._ssIdActa      = d.ssId;
-                ST._actaGenerada  = true;
-                actualizarBotonesActa(); // ocultar "Generar Acta", mostrar "Abrir Acta"
-              }
-            })
-            .catch(() => {});
-        }
       }
     }
     // Cargar links de acta si existen en BD
@@ -4268,6 +4259,7 @@ async function _generarRFDocFinal(fotos) {
         direccion:       datos.direccion   || '',
         barrio:          datos.barrio      || '',
         idCarpetaVisita: ST._idCarpetaVisita || null,
+        idCarpetaFotos:  ST._idCarpetaFotos  || null,
         fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
           fileId:      f.id || f.fileId,
           descripcion: f.descripcionFinal || f.descripcion || ''
@@ -5703,12 +5695,12 @@ function actualizarBotonesActa() {
   }
 
   // Botón "Registro fotográfico": genera el Doc con fotos en Google Docs.
-  // Visible si: hay acta Sheet + hay carpeta de fotos + no se ha generado el Doc aún.
-  // No depende de _fotosParaActa (sesión) — carga directo desde Drive.
+  // Visible si: hay carpeta de fotos (Drive) + no se ha generado el Doc aún.
+  // No requiere acta Sheet ni fotos de sesión — el Doc de RF es independiente.
   const btnInsertarFotos = document.getElementById('btn-insertar-fotos-acta');
   if (btnInsertarFotos) {
     const yaHayRegistroFotos = !!ST._docIdRegistroFotos || !!ST._linkDocRegistroFotos;
-    btnInsertarFotos.style.display = (tieneSheet && ST._idCarpetaFotos && !yaHayRegistroFotos) ? '' : 'none';
+    btnInsertarFotos.style.display = (ST._idCarpetaFotos && !yaHayRegistroFotos) ? '' : 'none';
   }
 
   // Botón "Ver registro fotográfico": abre el Doc generado.
