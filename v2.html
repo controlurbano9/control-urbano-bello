@@ -2427,8 +2427,27 @@ function prepararFormulario(fila, filaIdx) {
       if (ST._idCarpetaVisita) {
         fetch(`${CFG.webhook}?accion=obtenerIdFotos&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`)
           .then(r => r.json())
-          .then(d => { if (d.ok && d.idFotos) ST._idCarpetaFotos = d.idFotos; })
+          .then(d => {
+            if (d.ok && d.idFotos) {
+              ST._idCarpetaFotos = d.idFotos;
+              actualizarBotonesActa(); // re-evaluar botón registro fotográfico
+            }
+          })
           .catch(() => {});
+        // Verificar si ya hay un acta en Drive (independiente de lo que diga la BD)
+        if (!ST._actaGenerada) {
+          fetch(`${CFG.webhook}?accion=buscarActaEnCarpeta&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`)
+            .then(r => r.json())
+            .then(d => {
+              if (d.ok && d.link) {
+                ST._linkSheetActa = d.link;
+                ST._ssIdActa      = d.ssId;
+                ST._actaGenerada  = true;
+                actualizarBotonesActa(); // ocultar "Generar Acta", mostrar "Abrir Acta"
+              }
+            })
+            .catch(() => {});
+        }
       }
     }
     // Cargar links de acta si existen en BD
@@ -2829,7 +2848,7 @@ async function guardarRegistro() {
     document.getElementById('f-visitador').value,                         // R  VISITADOR(ES)
     '',                                                                    // S  FECHA 2DA VISITA
     '',                                                                    // T  VISITADOR2
-    '',                                                                    // U  FECHA DEVOLUCION
+    ST._filaPendiente ? (ST._filaPendiente['FECHA DEVOLUCION'] || ST._filaPendiente[20] || '') : '', // U  FECHA DEVOLUCION
     '',                                                                    // V  DIAS
     getRadVal('rg-estado-obra'),                                           // W  ESTADO OBRA
     document.getElementById('f-infraccion').value,                        // X  TIPO DE INFRACCION
@@ -5534,8 +5553,6 @@ function recopilarDatosF46() {
 }
 
 async function descargarF46xlsx() {
-  ST._actaGenerada = true;
-  actualizarPanelEstado();
   const camposObl = [
     {id:'f-fecha-visita', label:'Fecha de visita'},
     {id:'f-direccion', label:'Dirección del inmueble'},
@@ -5553,113 +5570,14 @@ async function descargarF46xlsx() {
       return;
     }
   }
-
-  // Si hay carpeta de fotos, cargar y mostrar panel de revisión
-  if (ST._idCarpetaFotos) {
-    notif('Cargando fotos y analizando con IA...', 'carga');
-    try {
-      const url = CFG.webhook + '?accion=listarFotosActa&idCarpeta=' + encodeURIComponent(ST._idCarpetaFotos);
-      const r = await fetch(url);
-      const d = await r.json();
-      if (d.ok && d.fotos && d.fotos.length > 0) {
-        mostrarPanelRevisionFotos(d.fotos);
-        return;
-      }
-    } catch(e) {
-      console.warn('Error cargando fotos:', e);
-    }
-  }
-
-  // Sin fotos — generar acta directo
-  generarActaF46Final([]);
+  // Generar el acta directamente — el Registro Fotográfico es independiente
+  generarActaF46Final();
 }
 
-// Panel de revisión de fotos antes de generar el acta
-function mostrarPanelRevisionFotos(fotos) {
-  // Crear modal de revisión
-  const modal = document.createElement('div');
-  modal.id = 'modal-fotos-acta';
-  modal.style.cssText = `
-    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999;
-    display:flex; align-items:flex-start; justify-content:center;
-    padding:16px; overflow-y:auto;
-  `;
-
-  const contenido = document.createElement('div');
-  contenido.style.cssText = `
-    background:white; border-radius:12px; padding:20px; width:100%;
-    max-width:600px; margin:auto;
-  `;
-
-  contenido.innerHTML = `
-    <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
-    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;">
-      Revisa y edita las descripciones generadas por IA (máx. 5 palabras)
-    </div>
-    <div id="grid-fotos-revision" style="display:flex; flex-direction:column; gap:12px;"></div>
-    <div style="display:flex; gap:8px; margin-top:16px;">
-      <button onclick="confirmarActaConFotos()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
-        ✅ Confirmar y generar acta
-      </button>
-      <button onclick="document.getElementById('modal-fotos-acta').remove()" style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
-        Cancelar
-      </button>
-    </div>
-  `;
-
-  modal.appendChild(contenido);
-  document.body.appendChild(modal);
-
-  // Llenar grid con fotos
-  const grid = document.getElementById('grid-fotos-revision');
-  fotos.forEach((foto, i) => {
-    const item = document.createElement('div');
-    item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
-    item.innerHTML = `
-      <img src="data:${foto.mimeType};base64,${foto.base64}"
-        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
-      <div style="flex:1;">
-        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${foto.descripcion}"
-          id="desc-foto-${i}"
-          maxlength="60"
-          placeholder="Descripción (máx. 5 palabras)"
-          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
-      </div>
-    `;
-    grid.appendChild(item);
-  });
-
-  // Guardar fotos en variable global temporal
-  window._fotosRevision = fotos;
-}
-
-function confirmarActaConFotos() {
-  const fotos = window._fotosRevision || [];
-  // Recoger descripciones editadas
-  fotos.forEach((foto, i) => {
-    const input = document.getElementById('desc-foto-' + i);
-    if (input) foto.descripcionFinal = input.value.trim() || foto.descripcion;
-    else foto.descripcionFinal = foto.descripcion;
-  });
-  document.getElementById('modal-fotos-acta')?.remove();
-  generarActaF46Final(fotos);
-}
-
-async function generarActaF46Final(fotos) {
+async function generarActaF46Final() {
   try {
     showLoading('Generando acta F-GGO-46...', 'Esto puede tardar 30-60 segundos');
     const datos = recopilarDatosF46();
-
-    // Las fotos del panel: solo fileId — NO base64 para reducir payload al mínimo.
-    // El Apps Script prueba 4 estrategias para insertar: DriveApp, UrlFetchApp,
-    // newCellImage y =IMAGE(). Así nunca depende de base64 en el payload.
-    datos.fotos = fotos
-      .filter(f => (f.id || f.fileId))   // solo fotos ya subidas a Drive
-      .map(f => ({
-        fileId:      f.id || f.fileId,
-        descripcion: f.descripcionFinal || f.descripcion || ''
-      }));
 
     // Carpeta de la visita (padre de Fotos) para guardar el acta
     datos.idCarpetaVisita = ST._idCarpetaVisita || null;
@@ -5712,21 +5630,32 @@ async function generarActaF46Final(fotos) {
 }
 
 async function guardarLinkActaEnBD(linkPdf, linkSheet, ssId) {
+  const fila = ST.filaEditando;
+  if (!fila) {
+    console.warn('[guardarLinkActaEnBD] ST.filaEditando no está definido — link no guardado en BD');
+    return;
+  }
   try {
     const payload = {
-      accion: 'actualizarLinks',
-      fila: ST.filaEditando,
-      linkPdfActa: linkPdf || '',
+      accion:       'actualizarLinks',
+      fila:         fila,
+      linkPdfActa:  linkPdf  || '',
       linkXlsxActa: linkSheet || '',
-      ssIdActa: ssId || ''
+      ssIdActa:     ssId     || ''
     };
-    await fetch(CFG.webhook, {
-      method: 'POST',
+    const r = await fetch(CFG.webhook, {
+      method:  'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body:    JSON.stringify(payload)
     });
+    const d = await r.json();
+    if (!d.ok) {
+      console.error('[guardarLinkActaEnBD] Apps Script error:', d.error);
+      notif('⚠️ Acta generada pero no se pudo guardar el link en BD: ' + (d.error || ''), 'aviso');
+    }
   } catch(e) {
-    console.warn('No se pudo guardar link en BD:', e);
+    console.warn('[guardarLinkActaEnBD] Error de red:', e);
+    notif('⚠️ Acta generada pero sin conexión para guardar link en BD', 'aviso');
   }
 }
 
@@ -6009,8 +5938,14 @@ function renderGestionCard(f) {
   const dir = f['DIRECCION INFRACCION'] || f[3] || '';
   const bar = f['BARRIO/VEREDA'] || f[4] || '';
   const vis = f['VISITADOR(ES)'] || f[17] || '';
-  const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
-  const estNorm = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+  const fAsig      = f['FECHA ASIGNACION VISITA'] || f[14] || '';
+  const fDevol     = f['FECHA DEVOLUCION'] || f[20] || '';
+  let   estNorm    = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+  // Regla visual: tiene fecha asignación y no tiene fecha devolución → ASIGNADO
+  // (no aplica si ya está en estado más avanzado: INICIADO o COMPLETADO)
+  if (fAsig && !fDevol && estNorm !== 'INICIADO' && estNorm !== 'COMPLETADO') {
+    estNorm = 'ASIGNADO';
+  }
   const filaSheets = f._idx || 2;
 
   // Badge de estado
