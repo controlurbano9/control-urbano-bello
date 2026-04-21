@@ -1535,15 +1535,27 @@
       <button class="btn-principal azul" id="btn-ver-acta-pdf" style="display:none; background:#0F4C81;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta</button>
       <button class="btn-principal azul" id="btn-ver-pdf-acta" style="display:none; background:#7B2D00;" onclick="window.open(ST._linkPdfActa,'_blank')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Ver PDF</button>
       <button class="btn-principal" id="btn-generar-pdf-acta" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);" onclick="generarPdfDesdeSheet()"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></span> Generar PDF (Admin)</button>
+      <button class="btn-principal" id="btn-insertar-fotos-acta" onclick="insertarFotosEnActa()" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Registro fotográfico</button>
+      <button class="btn-principal" id="btn-ver-registro-fotos" style="display:none; background:var(--superficie); color:var(--texto); border:1px solid var(--borde);"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Ver registro fotográfico</button>
       <button class="btn-principal gris" onclick="irA('pantalla-home'); setNav('nav-home')" style="margin-bottom:24px;"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span> Cancelar</button>
 
       <!-- FOTOS -->
       <div class="form-seccion" id="seccion-fotos" style="display:none;">
-        <span class="form-seccion-titulo titulo-azul">📁 Carpeta de visita</span>
-        <!-- V1: sin subida de fotos — disponible en V2 -->
-        <div id="bloque-subir-fotos" style="display:none;"></div>
-        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:4px;">
-          <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver carpeta en Drive
+        <span class="form-seccion-titulo titulo-azul">📷 Registro fotográfico</span>
+        <div id="bloque-subir-fotos">
+          <div class="input-grupo">
+            <label class="input-label">Agregar fotos (se analizan con IA automáticamente)</label>
+            <input type="file" id="input-fotos" accept="image/*" multiple
+              class="input-campo" style="padding:8px;" onchange="previsualizarFotos(this)">
+          </div>
+          <div id="preview-fotos" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+          <button class="btn-principal azul" onclick="subirFotos()" id="btn-subir-fotos" style="display:none; margin-top:8px;">
+            <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive
+          </button>
+          <div id="progreso-fotos" style="font-size:12px; color:var(--texto-suave); margin-top:6px;"></div>
+        </div>
+        <button class="btn-principal gris" id="btn-ver-fotos-drive" onclick="verFotosEnDrive()" style="display:none; margin-top:8px;">
+          <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg></span> Ver fotos en Drive
         </button>
       </div>
 
@@ -1650,7 +1662,7 @@ const CFG = {
   sheetId:   '1nNNxODzXNSBcS_vqXZU5hFJpEmz9SEblWIESDAwAM0g',
   apiKey:    'AIzaSyC4hDdBKQdFWJcVgpSjo-PSX3goR3hJ24Q',
   hoja:      'BD VISITAS',
-  // claudeKey eliminada — la clave vive solo en Apps Script (nunca en el HTML)
+  // claudeKey eliminada del HTML — la clave vive solo en Apps Script (nunca en GitHub)
   webhook:   'https://script.google.com/macros/s/AKfycbzKgiwc4AWAvNMMYWwU2Q0ir1V6R9GVbjQo7w2W4AowU9--0_IdJc6dSH8enBil54jr3w/exec',
 };
 
@@ -1683,6 +1695,7 @@ let ST = {
   _linkCarpetaDrive: null,
   _cargosUsuarios: {},
   _fotosSubidas: false,
+  _fotosParaActa: [],   // [{ fileId, link, descripcion }] — guardado al subir
   _ssIdActa: null,
   _linkSheetActa: null,
   _actaGenerada: false,
@@ -2216,7 +2229,7 @@ function tarjetaRadicado(radicado, visitas) {
           </button>` : ''}
         ${estNorm === 'INICIADO' ? `
           <button class="btn-sm azul" onclick="abrirVisitaPorIdx(${visitas[visitas.length-1].i})">
-            ✏️ Completar registro
+            ✏️ Editar registro
           </button>` : ''}
         ${estNorm === 'COMPLETADO' && ST.rol === 'ADMIN' ? `
           <button class="btn-sm verde" onclick="nuevaVisitaDesde('${radicado}', [${visitas.map(v=>v.i).join(',')}])">
@@ -2276,7 +2289,12 @@ function verDetalle(fila, idx) {
                  (estRaw === 'REALIZADA' || estRaw === 'REPETIR' || estRaw === 'INICIADO') ? 'INICIADO' :
                  (estRaw === 'COMPLETADO' || estRaw === 'COMPLETADA') ? 'COMPLETADO' : estRaw;
   if (estado === 'COMPLETADO') {
-    aplicarModoSoloLectura();
+    const yaHayActa = ST._actaGenerada || !!ST._ssIdActa || !!ST._linkPdfActa;
+    if (yaHayActa) {
+      aplicarModoSoloLectura();
+    } else {
+      aplicarModoEdicionPreActa();
+    }
   } else if (estado === 'INICIADO') {
     aplicarModoOficina();
     // Bloquear toggle PQR/Oficio — ya no puede cambiarse
@@ -2321,7 +2339,10 @@ function prepararFormulario(fila, filaIdx) {
     ST._linkCarpetaDrive = null;
     ST._ssIdActa = null;
     ST._linkSheetActa = null;
+    ST._docIdRegistroFotos = null;
+    ST._linkDocRegistroFotos = null;
     ST._fotosSubidas = false;
+    ST._fotosParaActa = [];
     ST._actaGenerada = false;
     ST._informeGenerado = false;
     // Ocultar panel de estado
@@ -2393,19 +2414,49 @@ function prepararFormulario(fila, filaIdx) {
     const linkD = fila['LINK_DRIVE'] || fila[55] || '';
     ST._fotosSubidas = !!(linkD);
     ST._linkCarpetaDrive = linkD;
+    // Si hay carpeta Drive, extraer ID raíz y mostrar sección fotos de inmediato
+    // (el ID de la subcarpeta Fotos se obtiene async, pero no bloqueamos la UI)
+    if (linkD) {
+      const matchCarpetaRaiz = linkD.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (matchCarpetaRaiz) ST._idCarpetaVisita = matchCarpetaRaiz[1];
+      const secFotosInm = document.getElementById('seccion-fotos');
+      const btnVerDriveInm = document.getElementById('btn-ver-fotos-drive');
+      if (secFotosInm) secFotosInm.style.display = 'block';
+      if (btnVerDriveInm) btnVerDriveInm.style.display = 'block';
+      // Obtener async el ID exacto de la subcarpeta Fotos (sin bloquear UI)
+      if (ST._idCarpetaVisita) {
+        fetch(`${CFG.webhook}?accion=obtenerIdFotos&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`)
+          .then(r => r.json())
+          .then(d => {
+            if (!d.ok) return;
+            if (d.idFotos) ST._idCarpetaFotos = d.idFotos;
+            // Si el AS encontró un acta en la carpeta y la BD no la tenía, cargarla
+            if (d.linkActa && !ST._actaGenerada) {
+              ST._linkSheetActa = d.linkActa;
+              ST._ssIdActa      = d.ssIdActa;
+              ST._actaGenerada  = true;
+            }
+            actualizarBotonesActa(); // re-evaluar ambos botones con datos completos
+          })
+          .catch(() => {});
+      }
+    }
     // Cargar links de acta si existen en BD
     ST._linkXlsxActa  = fila['LINK_XLSX_ACTA'] || fila[57] || '';
     ST._linkSheetActa = ST._linkXlsxActa;
     ST._linkPdfActa   = fila['LINK_PDF_ACTA']  || fila[56] || '';
     ST._estadoVisita  = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
-    // Extraer ssId del link del Sheet para poder generar PDF después
+    // Extraer ssId del Sheet para poder generar PDF después
     const matchSsId = ST._linkSheetActa.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
     ST._ssIdActa = matchSsId ? matchSsId[1] : '';
+    // El Doc del registro fotográfico no se guarda en BD (vive en la carpeta de visita)
+    ST._docIdRegistroFotos   = null;
+    ST._linkDocRegistroFotos = null;
     ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
     actualizarBotonesActa();
-    // Cambiar botón a "Completar registro" en modo INICIADO
+    // Cambiar botón a "Actualizar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
-    if (btnG) btnG.innerHTML = '💾 Completar registro';
+    if (btnG) btnG.innerHTML = '💾 Actualizar registro';
     setTimeout(actualizarPanelEstado, 500);
     ST.nVisita = Number(celda(fila, 16)) || 1;
 
@@ -2414,13 +2465,27 @@ function prepararFormulario(fila, filaIdx) {
     document.getElementById('info-nvisita').textContent = '✓ Editando Visita N°' + ST.nVisita + ' · ' + (fila['RADICADO']||fila[1]||'');
     document.getElementById('info-nvisita').style.background = 'var(--azul-bg)';
     document.getElementById('info-nvisita').style.color = 'var(--azul)';
-    // Botón Ver radicado PDF si existe link
-    const linkPdfRad = fila['LINK_PDF_RADICADO'] || fila[60] || '';
+    // Botón Ver radicado PDF — búsqueda en Drive por número de radicado
     const btnVerRad = document.getElementById('btn-ver-radicado-pdf');
+    const svgPdf = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>`;
     if (btnVerRad) {
-      if (linkPdfRad) {
+      const radBuscar = fila['RADICADO'] || celda(fila, 1) || '';
+      if (radBuscar) {
         btnVerRad.style.display = 'inline-flex';
-        btnVerRad.onclick = () => window.open(linkPdfRad, '_blank');
+        btnVerRad.disabled = true;
+        btnVerRad.innerHTML = svgPdf + ' Buscando PDF...';
+        fetch(`${CFG.webhook}?accion=buscarPDFRadicado&radicado=${encodeURIComponent(radBuscar)}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.ok && d.link) {
+              btnVerRad.disabled = false;
+              btnVerRad.innerHTML = svgPdf + ' Ver radicado PDF';
+              btnVerRad.onclick = () => window.open(d.link, '_blank');
+            } else {
+              btnVerRad.style.display = 'none';
+            }
+          })
+          .catch(() => { btnVerRad.style.display = 'none'; });
       } else {
         btnVerRad.style.display = 'none';
       }
@@ -2454,16 +2519,24 @@ function prepararFormulario(fila, filaIdx) {
       const latVal = fila['LATITUD'] || celda(fila, 48) || '';
       const lonVal = fila['LONGITUD'] || celda(fila, 49) || '';
       document.getElementById('gps-coords').textContent = latVal + ', ' + lonVal;
-      document.getElementById('gps-dir').textContent = 'Ubicación guardada';
       document.getElementById('btn-mapa').style.display = 'inline-flex';
-      // Ocultar caja GPS si ya tiene coordenadas
-      const gpsBox = document.getElementById('gps-box');
-      if (gpsBox) gpsBox.style.display = 'none';
-      const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
-      if (btnGps) { btnGps.style.display = 'none'; }
-      // Mostrar mapa con pin (arrastrable solo si no está completado)
+      // Determinar estado para decidir si GPS es editable
       const estCargando = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
       const esCompletado = estCargando === 'COMPLETADO' || estCargando === 'COMPLETADA';
+      const gpsBox = document.getElementById('gps-box');
+      const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
+      if (esCompletado) {
+        // COMPLETADO → ocultar caja GPS, pin fijo
+        document.getElementById('gps-dir').textContent = 'Ubicación guardada';
+        if (gpsBox) gpsBox.style.display = 'none';
+        if (btnGps) btnGps.style.display = 'none';
+      } else {
+        // PENDIENTE / INICIADO → mantener caja y botón visibles para permitir actualizar
+        document.getElementById('gps-dir').textContent = 'Coordenadas guardadas · puedes actualizar';
+        if (gpsBox) gpsBox.style.display = 'flex';
+        if (btnGps) { btnGps.style.display = ''; btnGps.disabled = false; btnGps.style.opacity = ''; btnGps.style.pointerEvents = ''; }
+      }
+      // Mostrar mapa con pin (arrastrable solo si no está completado)
       setTimeout(() => mostrarMapaGPS(ST.gpsLat, ST.gpsLon, !esCompletado), 200);
     }
 
@@ -2621,20 +2694,7 @@ function nuevaVisitaDesde(radicado, indices) {
 async function guardarRegistro() {
   const fechaVisitaVal = document.getElementById('f-fecha-visita').value;
 
-  // Si el botón dice "Completar registro", verificar que el panel esté completo
-  const btnActual = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnActual && btnActual.textContent.includes('Completar')) {
-    // Calcular estado del panel
-    const itemsEl = document.getElementById('estado-items');
-    if (itemsEl) {
-      const pendientes = itemsEl.querySelectorAll('[style*="var(--rojo)"]').length;
-      if (pendientes > 0) {
-        notif(`Faltan ${pendientes} sección(es) por completar`, 'error');
-        itemsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-    }
-  }
+  // Sin bloqueo por panel — el inspector puede actualizar las veces necesarias
 
   // ── Validaciones obligatorias primera visita ──────────────
   const esEdicion = !!ST.filaEditando;
@@ -2721,7 +2781,7 @@ async function guardarRegistro() {
                     document.getElementById('area-no-medible')?.checked;
   const tieneLicencia = getRadVal('rg-licencia-aportada');
   const tieneFotos = ST._fotosSubidas || ST._idCarpetaFotos;
-  const tieneDocumento = ST._actaGenerada || ST._informeGenerado;
+  const tieneDocumento = ST._actaGenerada || ST._informeGenerado || ST._estadoVisita === 'COMPLETADO';
   const estado = (tieneNorma && tieneArea && tieneLicencia && tieneFotos && tieneDocumento)
     ? 'COMPLETADO' : 'INICIADO';
   if (estado === 'COMPLETADO') {
@@ -2774,7 +2834,7 @@ async function guardarRegistro() {
     document.getElementById('f-visitador').value,                         // R  VISITADOR(ES)
     '',                                                                    // S  FECHA 2DA VISITA
     '',                                                                    // T  VISITADOR2
-    '',                                                                    // U  FECHA DEVOLUCION
+    ST._filaPendiente ? (ST._filaPendiente['FECHA DEVOLUCION'] || ST._filaPendiente[20] || '') : '', // U  FECHA DEVOLUCION
     '',                                                                    // V  DIAS
     getRadVal('rg-estado-obra'),                                           // W  ESTADO OBRA
     document.getElementById('f-infraccion').value,                        // X  TIPO DE INFRACCION
@@ -2851,7 +2911,7 @@ async function guardarRegistro() {
     }
     // Después del primer guardado: cambiar botón y actualizar panel
     const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
-    if (btnGuardar) btnGuardar.innerHTML = '💾 Completar registro';
+    if (btnGuardar) btnGuardar.innerHTML = '💾 Actualizar registro';
     // Mostrar sección fotos si hay carpeta Drive
     if (ST._idCarpetaFotos) {
       const secFotos = document.getElementById('seccion-fotos');
@@ -2860,7 +2920,7 @@ async function guardarRegistro() {
       const btnF43 = document.getElementById('btn-generar-informe');
       if (secFotos) { secFotos.style.display = 'block'; }
       if (btnVerDrive && ST._linkCarpetaDrive) btnVerDrive.style.display = 'block';
-      if (btnF46) btnF46.style.display = '';
+      actualizarBotonesActa(); // calcula correctamente según yaHayActa
       if (btnF43) btnF43.style.display = '';
     }
     // Actualizar panel de estado
@@ -3158,6 +3218,9 @@ function normalizarDireccionGoogle(dir) {
 // ═══════════════════════════════════════════
 // MEJORAR REDACCIÓN CON IA
 // ═══════════════════════════════════════════
+// Flujo: 1) Claude vía webhook (clave en Apps Script, no expuesta)
+//         2) Groq directo (fallback)
+//         3) Gemini directo (último recurso)
 async function mejorarRedaccion() {
   const textarea = document.getElementById('transcripcion');
   const texto = textarea.value.trim();
@@ -3165,7 +3228,6 @@ async function mejorarRedaccion() {
   const btn = document.getElementById('btn-mejorar');
   btn.disabled = true;
   btn.textContent = '⏳ Mejorando...';
-  showLoading('Mejorando redacción con IA...', 'Conectando con Claude...');
 
   const SYSTEM_PROMPT = `Eres un inspector de control urbano del municipio de Bello, Colombia con años de experiencia. Tu tarea es mejorar el texto que te envío manteniendo mi tono y mi forma de expresarme — que suene como lo escribí yo, no como una IA.
 
@@ -3184,8 +3246,6 @@ Reglas:
 - NO inventes ni agregues información que no esté en el texto original
 - Responde SOLO con el texto reescrito, sin explicaciones ni comentarios`;
 
-  const USER_PROMPT = texto;
-
   let textMejorado = null;
   let errorMsg = '';
 
@@ -3195,14 +3255,17 @@ Reglas:
     const resp = await fetch(CFG.webhook, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + USER_PROMPT })
+      body: JSON.stringify({ accion: 'mejorarTexto', texto: SYSTEM_PROMPT + '\n\n' + texto })
     });
     const d = await resp.json();
-    if (!d.ok || !d.texto) throw new Error(d.error || 'Respuesta vacía del webhook');
-    textMejorado = d.texto.trim();
-    console.log('mejorarRedaccion: OK vía Claude (webhook)');
+    if (d.ok && d.texto) {
+      textMejorado = d.texto;
+      console.log('mejorarRedaccion: OK vía Claude (webhook)');
+    } else {
+      throw new Error(d.error || 'Sin respuesta');
+    }
   } catch(e) {
-    console.warn('mejorarRedaccion: Claude webhook falló, usando Groq...', e.message);
+    console.log('mejorarRedaccion: Claude webhook falló, usando Groq...', e.message);
     errorMsg = e.message;
   }
 
@@ -3220,20 +3283,17 @@ Reglas:
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: USER_PROMPT }
+            { role: 'user', content: texto }
           ],
           max_tokens: 600,
           temperature: 0.3
         })
       });
-      if (!resp.ok) {
-        const err = await resp.text();
-        throw new Error(`Groq HTTP ${resp.status}: ${err.substring(0, 200)}`);
-      }
+      if (!resp.ok) throw new Error(`Groq HTTP ${resp.status}`);
       const data = await resp.json();
       textMejorado = data?.choices?.[0]?.message?.content?.trim() || null;
       if (!textMejorado) throw new Error('Groq devolvió respuesta vacía');
-      console.log('mejorarRedaccion: OK vía Groq (fallback)');
+      console.log('mejorarRedaccion: OK vía Groq');
     } catch(e) {
       console.warn('mejorarRedaccion: Groq falló:', e.message);
       errorMsg += ' | Groq: ' + e.message;
@@ -3244,24 +3304,20 @@ Reglas:
   if (!textMejorado) {
     try {
       showLoading('Mejorando redacción con IA...', 'Usando Gemini como último recurso...');
-      const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64`;
       const resp2 = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: SYSTEM_PROMPT + '\n\n' + USER_PROMPT }] }],
+          contents: [{ parts: [{ text: SYSTEM_PROMPT + '\n\n' + texto }] }],
           generationConfig: { maxOutputTokens: 600, temperature: 0.3 }
         })
       });
-      if (!resp2.ok) {
-        const err2 = await resp2.text();
-        throw new Error(`Gemini HTTP ${resp2.status}: ${err2.substring(0, 200)}`);
-      }
+      if (!resp2.ok) throw new Error(`Gemini HTTP ${resp2.status}`);
       const data2 = await resp2.json();
       textMejorado = data2?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
       if (!textMejorado) throw new Error('Gemini devolvió respuesta vacía');
-      console.log('mejorarRedaccion: OK vía Gemini (último recurso)');
+      console.log('mejorarRedaccion: OK vía Gemini');
     } catch(e2) {
       console.error('mejorarRedaccion: Gemini también falló:', e2.message);
       errorMsg += ' | Gemini: ' + e2.message;
@@ -3277,7 +3333,6 @@ Reglas:
     if (conf) textarea.value = textMejorado;
   } else {
     notif('No se pudo mejorar el texto. Verifica tu conexión.', 'error');
-    console.error('mejorarRedaccion: todos los intentos fallaron:', errorMsg);
   }
 }
 
@@ -3827,8 +3882,7 @@ function desbloquearCamposVisita() {
   // Restaurar botones de acción
   const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
   if (btnGuardar) { btnGuardar.style.display = ''; btnGuardar.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg></span> Guardar registro'; }
-  const btnF46 = document.querySelector('[onclick="descargarF46xlsx()"]');
-  if (btnF46) btnF46.style.display = ST._idCarpetaFotos ? '' : 'none';
+  actualizarBotonesActa(); // calcula correctamente según yaHayActa e idCarpetaFotos
   const btnF43 = document.getElementById('btn-generar-informe');
   if (btnF43) btnF43.style.display = ST._idCarpetaFotos ? '' : 'none';
 
@@ -3926,43 +3980,94 @@ function toggleCitacion(check) {
 }
 
 // ═══════════════════════════════════════════
-// FOTOS — Preview y subida a Drive
+// FOTOS — Preview con X + subida a Drive + descripción Gemini
 // ═══════════════════════════════════════════
+
+// Almacén temporal de archivos seleccionados (permite eliminar antes de subir)
+window._fotosSeleccionadas = [];
+
 function previsualizarFotos(input) {
-  const preview = document.getElementById('preview-fotos');
+  if (!input.files.length) return;
+  // Agregar nuevos archivos al arreglo existente (no reemplazar)
+  Array.from(input.files).forEach(f => window._fotosSeleccionadas.push(f));
+  input.value = ''; // limpiar input para permitir re-selección del mismo archivo
+  renderizarPreviewFotos();
+}
+
+function renderizarPreviewFotos() {
+  const preview  = document.getElementById('preview-fotos');
   const btnSubir = document.getElementById('btn-subir-fotos');
+  const progreso = document.getElementById('progreso-fotos');
   preview.innerHTML = '';
-  if (!input.files.length) { btnSubir.style.display = 'none'; return; }
-  Array.from(input.files).forEach(file => {
+  const archivos = window._fotosSeleccionadas;
+  if (!archivos.length) {
+    btnSubir.style.display = 'none';
+    progreso.innerHTML = '';
+    return;
+  }
+  archivos.forEach((file, idx) => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde);';
-      preview.appendChild(img);
+    reader.onload = ev => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0;';
+      wrap.innerHTML = `
+        <img src="${ev.target.result}"
+          style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde); display:block;">
+        <button onclick="eliminarFotoPreview(${idx})"
+          style="position:absolute; top:-5px; right:-5px; background:var(--rojo,#e53e3e);
+                 color:white; border:none; border-radius:50%; width:18px; height:18px;
+                 font-size:10px; font-weight:700; cursor:pointer; line-height:18px;
+                 text-align:center; padding:0;">✕</button>`;
+      preview.appendChild(wrap);
     };
     reader.readAsDataURL(file);
   });
   btnSubir.style.display = 'block';
-  document.getElementById('progreso-fotos').innerHTML = `<span style="color:var(--texto-suave)">${input.files.length} foto(s) seleccionada(s)</span>`;
+  progreso.innerHTML = `<span style="color:var(--texto-suave)">${archivos.length} foto(s) seleccionada(s)</span>`;
+}
+
+function eliminarFotoPreview(idx) {
+  window._fotosSeleccionadas.splice(idx, 1);
+  renderizarPreviewFotos();
+}
+
+// Descripción IA desde el browser — evita timeout de Apps Script
+async function describirFotoEnNavegador(base64, mimeType) {
+  try {
+    const geminiKey = 'AIzaSyB72ttdPBP08G_MMXk1mDRAZhahY50Gb64';
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { text: 'Describe esta fotografía de inspección de obra en máximo 8 palabras en español. Solo palabras clave, sin puntuación ni comentarios.' },
+            { inline_data: { mime_type: mimeType, data: base64 } }
+          ]}],
+          generationConfig: { maxOutputTokens: 30, temperature: 0.2 }
+        })
+      }
+    );
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  } catch(e) { return ''; }
 }
 
 async function subirFotos() {
-  const input = document.getElementById('input-fotos');
-  const progreso = document.getElementById('progreso-fotos');
-  const btnSubir = document.getElementById('btn-subir-fotos');
+  const archivos  = window._fotosSeleccionadas;
+  const progreso  = document.getElementById('progreso-fotos');
+  const btnSubir  = document.getElementById('btn-subir-fotos');
   const idCarpeta = ST._idCarpetaFotos;
 
-  if (!idCarpeta) { notif('Guarda el registro primero', 'error'); return; }
-  if (!input.files.length) { notif('Selecciona al menos una foto', 'error'); return; }
+  if (!idCarpeta)      { notif('Guarda el registro primero', 'error'); return; }
+  if (!archivos.length){ notif('Selecciona al menos una foto', 'error'); return; }
 
   btnSubir.disabled = true;
   btnSubir.textContent = '⏳ Subiendo...';
-  const total = input.files.length;
-  let subidas = 0;
-  let errores = 0;
+  const total = archivos.length;
+  let subidas = 0, errores = 0;
 
-  // Mostrar barra de progreso
   progreso.innerHTML = `
     <div style="margin-bottom:6px; font-size:12px; color:var(--texto-suave);">
       <span id="prog-texto">Preparando...</span>
@@ -3975,55 +4080,208 @@ async function subirFotos() {
       <span id="prog-errores" style="color:var(--rojo); margin-left:8px;"></span>
     </div>`;
 
-  for (const file of input.files) {
-    document.getElementById('prog-texto').textContent = `Subiendo: ${file.name.substring(0,30)}...`;
+  for (const file of archivos) {
     try {
+      // 1. Leer base64
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader();
         reader.onload = e => res(e.target.result.split(',')[1]);
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      const nombre = new Date().getTime() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const nombre = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      // 2. Subir a Drive — text/plain evita preflight CORS (igual que generarActa)
+      document.getElementById('prog-texto').textContent = `Subiendo foto ${subidas + errores + 1}...`;
       const r = await fetch(CFG.webhook, {
         method: 'POST',
-        body: JSON.stringify({
-          accion: 'subirFoto',
-          idCarpeta: idCarpeta,
-          nombre: nombre,
-          mimeType: file.type,
-          base64: base64
-        })
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ accion: 'subirFoto', idCarpeta, nombre, mimeType: file.type, base64 })
       });
       const d = await r.json();
-      if (d.ok) subidas++; else errores++;
-    } catch(e) { errores++; }
+      if (!d.ok) throw new Error(d.error || 'Error en Drive');
+
+      // 3. Descripción Gemini Vision desde el browser (no bloquea el upload)
+      document.getElementById('prog-texto').textContent = `Analizando foto ${subidas + 1}...`;
+      const descripcion = await describirFotoEnNavegador(base64, file.type);
+
+      subidas++;
+      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion });
+
+    } catch(e) {
+      errores++;
+      console.warn('Error en foto:', e.message);
+    }
 
     // Actualizar barra
     const pct = Math.round(((subidas + errores) / total) * 100);
     document.getElementById('prog-barra').style.width = pct + '%';
-    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--verde)';
+    document.getElementById('prog-barra').style.background = errores > 0 ? 'var(--amarillo)' : 'var(--azul)';
     document.getElementById('prog-conteo').textContent = `${subidas + errores} / ${total}`;
     if (errores > 0) document.getElementById('prog-errores').textContent = `${errores} error(es)`;
   }
 
   btnSubir.disabled = false;
-  btnSubir.innerHTML = '<span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
+  btnSubir.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
 
-  if (errores === 0) {
+  if (subidas > 0) {
     ST._fotosSubidas = true;
-    document.getElementById('prog-texto').textContent = `✓ ${subidas} foto(s) subida(s) correctamente`;
-    document.getElementById('prog-barra').style.background = 'var(--verde)';
-    ST._fotosSubidas = true;
+    document.getElementById('prog-texto').textContent =
+      errores === 0 ? `✓ ${subidas} foto(s) subida(s) correctamente` : `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-barra').style.background = errores === 0 ? 'var(--verde)' : 'var(--amarillo)';
     notif(`✓ ${subidas} foto(s) en Drive`, 'exito');
-    input.value = '';
+    window._fotosSeleccionadas = [];
     document.getElementById('preview-fotos').innerHTML = '';
     btnSubir.style.display = 'none';
     actualizarPanelEstado();
   } else {
-    document.getElementById('prog-texto').textContent = `${subidas} subidas · ${errores} con error`;
+    document.getElementById('prog-texto').textContent = `0 subidas · ${errores} con error`;
     document.getElementById('prog-barra').style.background = 'var(--rojo)';
-    notif(`${subidas} subidas, ${errores} con error`, 'error');
+    notif(`Error subiendo fotos — revisa la consola`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// GENERAR REGISTRO FOTOGRÁFICO EN GOOGLE DOCS
+// Botón: btn-insertar-fotos-acta
+// Carga las fotos desde Drive (no depende de la sesión actual).
+// Muestra panel de revisión/edición de descripciones IA.
+// Si el Doc ya existe en Drive, devuelve el existente (sin duplicar).
+// ═══════════════════════════════════════════
+async function insertarFotosEnActa() {
+  if (!ST._linkSheetActa && !ST._ssIdActa) {
+    notif('Primero genera el acta (F-GGO-46)', 'error'); return;
+  }
+  if (!ST._idCarpetaFotos) {
+    notif('No hay carpeta de fotos asociada a esta visita', 'error'); return;
+  }
+
+  showLoading('Cargando fotos desde Drive...', 'Analizando con IA — puede tardar unos segundos');
+  try {
+    const url = CFG.webhook + '?accion=listarFotosActa&idCarpeta=' + encodeURIComponent(ST._idCarpetaFotos);
+    const r = await fetch(url);
+    const d = await r.json();
+    hideLoading();
+    if (d.ok && d.fotos && d.fotos.length > 0) {
+      mostrarPanelRF(d.fotos);
+    } else {
+      notif('No se encontraron fotos en la carpeta de Drive', 'aviso');
+    }
+  } catch(e) {
+    hideLoading();
+    notif('Error cargando fotos: ' + e.message, 'error');
+  }
+}
+
+// Panel de revisión de fotos exclusivo para el Registro Fotográfico
+function mostrarPanelRF(fotos) {
+  const modal = document.createElement('div');
+  modal.id = 'modal-rf-fotos';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:16px; overflow-y:auto;
+  `;
+  const contenido = document.createElement('div');
+  contenido.style.cssText = `
+    background:white; border-radius:12px; padding:20px; width:100%;
+    max-width:600px; margin:auto;
+  `;
+  contenido.innerHTML = `
+    <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
+    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;">
+      Revisa y edita las descripciones generadas por IA antes de insertar en el Doc
+    </div>
+    <div id="grid-rf-revision" style="display:flex; flex-direction:column; gap:12px;"></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button onclick="confirmarRFConFotos()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
+        ✅ Confirmar y generar registro
+      </button>
+      <button onclick="document.getElementById('modal-rf-fotos').remove()" style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
+        Cancelar
+      </button>
+    </div>
+  `;
+  modal.appendChild(contenido);
+  document.body.appendChild(modal);
+
+  const grid = document.getElementById('grid-rf-revision');
+  fotos.forEach((foto, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
+    item.innerHTML = `
+      <img src="data:${foto.mimeType};base64,${foto.base64}"
+        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+      <div style="flex:1;">
+        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
+        <input type="text" value="${(foto.descripcion || '').replace(/"/g, '&quot;')}"
+          id="desc-rf-${i}"
+          maxlength="60"
+          placeholder="Descripción (máx. 8 palabras)"
+          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
+      </div>
+    `;
+    grid.appendChild(item);
+  });
+
+  window._fotosRevisionRF = fotos;
+}
+
+function confirmarRFConFotos() {
+  const fotos = window._fotosRevisionRF || [];
+  fotos.forEach((foto, i) => {
+    const input = document.getElementById('desc-rf-' + i);
+    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion) : foto.descripcion;
+  });
+  document.getElementById('modal-rf-fotos')?.remove();
+  _generarRFDocFinal(fotos);
+}
+
+async function _generarRFDocFinal(fotos) {
+  const btn = document.getElementById('btn-insertar-fotos-acta');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+  showLoading('Generando registro fotográfico...', 'Insertando ' + fotos.length + ' foto(s) en Google Docs');
+
+  try {
+    const datos = recopilarDatosF46();
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        accion:          'generarRegistroFotos',
+        radicado:        datos.radicado    || '',
+        fechaVisita:     datos.fechaVisita || '',
+        direccion:       datos.direccion   || '',
+        barrio:          datos.barrio      || '',
+        idCarpetaVisita: ST._idCarpetaVisita || null,
+        idCarpetaFotos:  ST._idCarpetaFotos  || null,
+        fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
+          fileId:      f.id || f.fileId,
+          descripcion: f.descripcionFinal || f.descripcion || ''
+        }))
+      })
+    });
+    const d = await r.json();
+    hideLoading();
+    if (d.ok) {
+      ST._docIdRegistroFotos   = d.docId  || '';
+      ST._linkDocRegistroFotos = d.linkDoc || '';
+      actualizarBotonesActa();
+      notif(
+        d.yaExistia ? '⚠️ El registro fotográfico ya existía en Drive' : '✅ Registro fotográfico generado en Google Docs',
+        d.yaExistia ? 'aviso' : 'exito'
+      );
+    } else {
+      notif('Error: ' + (d.error || 'Error desconocido'), 'error');
+    }
+  } catch(e) {
+    hideLoading();
+    notif('Error de conexión: ' + e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Registro fotográfico';
+    }
   }
 }
 
@@ -4122,12 +4380,12 @@ function actualizarPanelEstado() {
       </div>`).join('');
   }
 
-  // Indicador en botón completar
+  // Indicador visual en botón actualizar (opacidad según completitud del panel)
   const btnCompletar = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnCompletar && btnCompletar.textContent.includes('Completar')) {
+  if (btnCompletar && btnCompletar.style.display !== 'none') {
     const pendientes = checks.filter(ch => !ch.ok).length;
     btnCompletar.style.opacity = todoOk ? '1' : '0.7';
-    btnCompletar.title = pendientes > 0 ? `Faltan ${pendientes} sección(es)` : '';
+    btnCompletar.title = pendientes > 0 ? `${pendientes} sección(es) sin completar` : '';
   }
 }
 function toggleNoAtiende(check) {
@@ -4265,7 +4523,7 @@ function aplicarModoOficina() {
   notif('Modo oficina — completa licencia, área y norma POT', 'info');
   // Cambiar botón guardar
   const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
-  if (btnGuardar) btnGuardar.innerHTML = '💾 Completar registro';
+  if (btnGuardar) btnGuardar.innerHTML = '💾 Actualizar registro';
 }
 
 function aplicarModoSoloLectura() {
@@ -4298,9 +4556,7 @@ function aplicarModoSoloLectura() {
   if (btnF46) btnF46.style.display = 'none';
   const btnF43 = document.getElementById('btn-generar-informe');
   if (btnF43) btnF43.style.display = 'none';
-  // Bloquear GPS
-  const btnGps = document.querySelector('[onclick="obtenerGPS()"]');
-  if (btnGps) { btnGps.disabled = true; btnGps.style.opacity = '0.4'; btnGps.style.pointerEvents = 'none'; }
+  // GPS siempre disponible — el pin se puede mover aunque el registro esté COMPLETADO
   // Bloquear observaciones del acta
   const obsActa = document.getElementById('f-obs-acta');
   if (obsActa) { obsActa.readOnly = true; obsActa.style.background = 'var(--gris-bg)'; }
@@ -4310,6 +4566,21 @@ function aplicarModoSoloLectura() {
   // Mostrar sección fotos con solo link Drive
   mostrarBotonFotosExistente(true);
   notif('✅ Registro completado — solo lectura', 'exito');
+}
+
+function aplicarModoEdicionPreActa() {
+  // Fotos: mostrar con subida habilitada
+  mostrarBotonFotosExistente(false);
+  // Bloquear solo el toggle PQR/Oficio (ya no puede cambiarse)
+  const rgOficio = document.getElementById('rg-oficio');
+  if (rgOficio) { rgOficio.style.pointerEvents = 'none'; rgOficio.style.opacity = '0.6'; }
+  // Mostrar botón guardar
+  const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
+  if (btnGuardar) {
+    btnGuardar.style.display = '';
+    btnGuardar.innerHTML = '💾 Actualizar registro';
+  }
+  notif('COMPLETADO — puedes modificar el formulario antes de generar el acta', 'info');
 }
 
 // Mostrar sección fotos en registros existentes
@@ -4341,9 +4612,8 @@ async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
     if (d.ok && d.idFotos) {
       ST._idCarpetaFotos = d.idFotos;
       if (secFotos) secFotos.style.display = 'block';
-      // Mostrar botones acta e informe ahora que tenemos carpeta Drive
-      const btnF46 = document.querySelector('[onclick="descargarF46xlsx()"]');
-      if (btnF46) btnF46.style.display = '';
+      // Actualizar botones con lógica completa (respeta yaHayActa, etc.)
+      actualizarBotonesActa();
       const btnF43 = document.getElementById('btn-generar-informe');
       if (btnF43 && !soloLectura) btnF43.style.display = '';
       if (soloLectura) {
@@ -4360,9 +4630,18 @@ async function obtenerIdCarpetaFotos(idCarpeta, soloLectura) {
 }
 
 function verFotosEnDrive() {
-  const link = ST._linkCarpetaDrive;
-  if (link) window.open(link, '_blank');
-  else notif('No hay carpeta Drive asociada', 'error');
+  // Prioridad 1: carpeta Fotos (obtenida al guardar o al cargar async)
+  if (ST._idCarpetaFotos) {
+    window.open('https://drive.google.com/drive/folders/' + ST._idCarpetaFotos, '_blank');
+  // Prioridad 2: carpeta raíz de la visita (al cargar un INICIADO existente,
+  //   ST._idCarpetaFotos puede no estar disponible aún — la Fotos es subcarpeta visible)
+  } else if (ST._idCarpetaVisita) {
+    window.open('https://drive.google.com/drive/folders/' + ST._idCarpetaVisita, '_blank');
+  } else if (ST._linkCarpetaDrive) {
+    window.open(ST._linkCarpetaDrive, '_blank');
+  } else {
+    notif('No hay carpeta de fotos asociada', 'error');
+  }
 }
 
 function toggleOficio(val) {
@@ -5259,8 +5538,6 @@ function recopilarDatosF46() {
 }
 
 async function descargarF46xlsx() {
-  ST._actaGenerada = true;
-  actualizarPanelEstado();
   const camposObl = [
     {id:'f-fecha-visita', label:'Fecha de visita'},
     {id:'f-direccion', label:'Dirección del inmueble'},
@@ -5278,110 +5555,14 @@ async function descargarF46xlsx() {
       return;
     }
   }
-
-  // Si hay carpeta de fotos, cargar y mostrar panel de revisión
-  if (ST._idCarpetaFotos) {
-    notif('Cargando fotos y analizando con IA...', 'carga');
-    try {
-      const url = CFG.webhook + '?accion=listarFotosActa&idCarpeta=' + encodeURIComponent(ST._idCarpetaFotos);
-      const r = await fetch(url);
-      const d = await r.json();
-      if (d.ok && d.fotos && d.fotos.length > 0) {
-        mostrarPanelRevisionFotos(d.fotos);
-        return;
-      }
-    } catch(e) {
-      console.warn('Error cargando fotos:', e);
-    }
-  }
-
-  // Sin fotos — generar acta directo
-  generarActaF46Final([]);
+  // Generar el acta directamente — el Registro Fotográfico es independiente
+  generarActaF46Final();
 }
 
-// Panel de revisión de fotos antes de generar el acta
-function mostrarPanelRevisionFotos(fotos) {
-  // Crear modal de revisión
-  const modal = document.createElement('div');
-  modal.id = 'modal-fotos-acta';
-  modal.style.cssText = `
-    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999;
-    display:flex; align-items:flex-start; justify-content:center;
-    padding:16px; overflow-y:auto;
-  `;
-
-  const contenido = document.createElement('div');
-  contenido.style.cssText = `
-    background:white; border-radius:12px; padding:20px; width:100%;
-    max-width:600px; margin:auto;
-  `;
-
-  contenido.innerHTML = `
-    <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
-    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;">
-      Revisa y edita las descripciones generadas por IA (máx. 5 palabras)
-    </div>
-    <div id="grid-fotos-revision" style="display:flex; flex-direction:column; gap:12px;"></div>
-    <div style="display:flex; gap:8px; margin-top:16px;">
-      <button onclick="confirmarActaConFotos()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
-        ✅ Confirmar y generar acta
-      </button>
-      <button onclick="document.getElementById('modal-fotos-acta').remove()" style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
-        Cancelar
-      </button>
-    </div>
-  `;
-
-  modal.appendChild(contenido);
-  document.body.appendChild(modal);
-
-  // Llenar grid con fotos
-  const grid = document.getElementById('grid-fotos-revision');
-  fotos.forEach((foto, i) => {
-    const item = document.createElement('div');
-    item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
-    item.innerHTML = `
-      <img src="data:${foto.mimeType};base64,${foto.base64}"
-        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
-      <div style="flex:1;">
-        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${foto.descripcion}"
-          id="desc-foto-${i}"
-          maxlength="60"
-          placeholder="Descripción (máx. 5 palabras)"
-          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
-      </div>
-    `;
-    grid.appendChild(item);
-  });
-
-  // Guardar fotos en variable global temporal
-  window._fotosRevision = fotos;
-}
-
-function confirmarActaConFotos() {
-  const fotos = window._fotosRevision || [];
-  // Recoger descripciones editadas
-  fotos.forEach((foto, i) => {
-    const input = document.getElementById('desc-foto-' + i);
-    if (input) foto.descripcionFinal = input.value.trim() || foto.descripcion;
-    else foto.descripcionFinal = foto.descripcion;
-  });
-  document.getElementById('modal-fotos-acta')?.remove();
-  generarActaF46Final(fotos);
-}
-
-async function generarActaF46Final(fotos) {
+async function generarActaF46Final() {
   try {
     showLoading('Generando acta F-GGO-46...', 'Esto puede tardar 30-60 segundos');
     const datos = recopilarDatosF46();
-
-    // Agregar fotos con descripciones finales
-    datos.fotos = fotos.map(f => ({
-      base64:      f.base64,
-      mimeType:    f.mimeType,
-      descripcion: f.descripcionFinal || f.descripcion
-    }));
 
     // Carpeta de la visita (padre de Fotos) para guardar el acta
     datos.idCarpetaVisita = ST._idCarpetaVisita || null;
@@ -5398,18 +5579,25 @@ async function generarActaF46Final(fotos) {
     const d = await r.json();
 
     if (d.ok) {
+      // ── Paso 1 completado: Sheet con CARACTERIZACIÓN ──────────
       ST._ssIdActa      = d.ssId      || '';
       ST._linkSheetActa = d.linkSheet || '';
       ST._linkPdfActa   = '';
       ST._linkXlsxActa  = d.linkSheet || '';
       ST._actaGenerada  = true;
+
       if (ST.filaEditando && d.linkSheet) {
         await guardarLinkActaEnBD('', d.linkSheet, d.ssId);
       }
+
+      const msgActa = d.yaExistia
+        ? '⚠️ El acta ya existía — abriendo la existente'
+        : '✅ Acta generada — usa el botón "Registro fotográfico" para el Doc con fotos';
+      notif(msgActa, d.yaExistia ? 'aviso' : 'exito');
+
       hideLoading();
       actualizarPanelEstado();
       actualizarBotonesActa();
-      notif('✅ Acta generada — toca "Abrir Acta" para revisar e imprimir', 'exito');
     } else {
       hideLoading();
       notif('Error al generar acta: ' + (d.error || 'Error desconocido'), 'error');
@@ -5427,21 +5615,32 @@ async function generarActaF46Final(fotos) {
 }
 
 async function guardarLinkActaEnBD(linkPdf, linkSheet, ssId) {
+  const fila = ST.filaEditando;
+  if (!fila) {
+    console.warn('[guardarLinkActaEnBD] ST.filaEditando no está definido — link no guardado en BD');
+    return;
+  }
   try {
     const payload = {
-      accion: 'actualizarLinks',
-      fila: ST.filaEditando,
-      linkPdfActa: linkPdf || '',
+      accion:       'actualizarLinks',
+      fila:         fila,
+      linkPdfActa:  linkPdf  || '',
       linkXlsxActa: linkSheet || '',
-      ssIdActa: ssId || ''
+      ssIdActa:     ssId     || ''
     };
-    await fetch(CFG.webhook, {
-      method: 'POST',
+    const r = await fetch(CFG.webhook, {
+      method:  'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body:    JSON.stringify(payload)
     });
+    const d = await r.json();
+    if (!d.ok) {
+      console.error('[guardarLinkActaEnBD] Apps Script error:', d.error);
+      notif('⚠️ Acta generada pero no se pudo guardar el link en BD: ' + (d.error || ''), 'aviso');
+    }
   } catch(e) {
-    console.warn('No se pudo guardar link en BD:', e);
+    console.warn('[guardarLinkActaEnBD] Error de red:', e);
+    notif('⚠️ Acta generada pero sin conexión para guardar link en BD', 'aviso');
   }
 }
 
@@ -5452,10 +5651,10 @@ function actualizarBotonesActa() {
   const tienePdf     = !!ST._linkPdfActa;
   const esAdmin      = ST.rol === 'ADMIN';
 
-  // Botón Sheet: visible solo ANTES de COMPLETADO
+  // Botón "Abrir Acta": visible si hay sheet Y no hay PDF todavía (antes de COMPLETADO o siempre que no haya PDF)
   const btnVerSheet = document.getElementById('btn-ver-acta-pdf');
   if (btnVerSheet) {
-    if (tieneSheet && !esCompletado) {
+    if (tieneSheet && !tienePdf) {
       btnVerSheet.style.display = '';
       btnVerSheet.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg></span> Abrir Acta';
       btnVerSheet.onclick = () => window.open(linkSheet, '_blank');
@@ -5480,6 +5679,34 @@ function actualizarBotonesActa() {
   if (btnGenPdf) {
     btnGenPdf.style.display = (esAdmin && tieneSheet && esCompletado && !tienePdf) ? '' : 'none';
   }
+
+  // Botón Generar Acta xlsx: solo si hay carpeta Y no existe acta aún (ningún link ni flag)
+  const btnGenActa = document.getElementById('btn-generar-acta');
+  if (btnGenActa) {
+    const yaHayActa = tieneSheet || tienePdf || ST._actaGenerada || !!ST._ssIdActa;
+    btnGenActa.style.display = (ST._idCarpetaFotos && !yaHayActa) ? '' : 'none';
+  }
+
+  // Botón "Registro fotográfico": genera el Doc con fotos en Google Docs.
+  // Visible si: hay carpeta de fotos (Drive) + no se ha generado el Doc aún.
+  // No requiere acta Sheet ni fotos de sesión — el Doc de RF es independiente.
+  const btnInsertarFotos = document.getElementById('btn-insertar-fotos-acta');
+  if (btnInsertarFotos) {
+    const yaHayRegistroFotos = !!ST._docIdRegistroFotos || !!ST._linkDocRegistroFotos;
+    btnInsertarFotos.style.display = (ST._idCarpetaFotos && !yaHayRegistroFotos) ? '' : 'none';
+  }
+
+  // Botón "Ver registro fotográfico": abre el Doc generado.
+  // Visible si ya se generó el Doc de fotos.
+  const btnVerRegFotos = document.getElementById('btn-ver-registro-fotos');
+  if (btnVerRegFotos) {
+    if (ST._linkDocRegistroFotos) {
+      btnVerRegFotos.style.display = '';
+      btnVerRegFotos.onclick = () => window.open(ST._linkDocRegistroFotos, '_blank');
+    } else {
+      btnVerRegFotos.style.display = 'none';
+    }
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -5494,10 +5721,10 @@ async function generarPdfDesdeSheet() {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
-        accion: 'generarPdfActa',
-        ssId: ST._ssIdActa,
+        accion:          'generarPdfActa',
+        ssId:            ST._ssIdActa,
         idCarpetaVisita: ST._idCarpetaVisita,
-        cantFotos: 0
+        cantFotos:       0
       })
     });
     const d = await r.json();
@@ -5696,8 +5923,14 @@ function renderGestionCard(f) {
   const dir = f['DIRECCION INFRACCION'] || f[3] || '';
   const bar = f['BARRIO/VEREDA'] || f[4] || '';
   const vis = f['VISITADOR(ES)'] || f[17] || '';
-  const fAsig = f['FECHA ASIGNACION VISITA'] || f[14] || '';
-  const estNorm = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+  const fAsig      = f['FECHA ASIGNACION VISITA'] || f[14] || '';
+  const fDevol     = f['FECHA DEVOLUCION'] || f[20] || '';
+  let   estNorm    = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+  // Regla visual: tiene fecha asignación y no tiene fecha devolución → ASIGNADO
+  // (no aplica si ya está en estado más avanzado: INICIADO o COMPLETADO)
+  if (fAsig && !fDevol && estNorm !== 'INICIADO' && estNorm !== 'COMPLETADO') {
+    estNorm = 'ASIGNADO';
+  }
   const filaSheets = f._idx || 2;
 
   // Badge de estado
