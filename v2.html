@@ -2289,7 +2289,12 @@ function verDetalle(fila, idx) {
                  (estRaw === 'REALIZADA' || estRaw === 'REPETIR' || estRaw === 'INICIADO') ? 'INICIADO' :
                  (estRaw === 'COMPLETADO' || estRaw === 'COMPLETADA') ? 'COMPLETADO' : estRaw;
   if (estado === 'COMPLETADO') {
-    aplicarModoSoloLectura();
+    const yaHayActa = ST._actaGenerada || !!ST._ssIdActa || !!ST._linkPdfActa;
+    if (yaHayActa) {
+      aplicarModoSoloLectura();
+    } else {
+      aplicarModoEdicionPreActa();
+    }
   } else if (estado === 'INICIADO') {
     aplicarModoOficina();
     // Bloquear toggle PQR/Oficio — ya no puede cambiarse
@@ -2771,7 +2776,7 @@ async function guardarRegistro() {
                     document.getElementById('area-no-medible')?.checked;
   const tieneLicencia = getRadVal('rg-licencia-aportada');
   const tieneFotos = ST._fotosSubidas || ST._idCarpetaFotos;
-  const tieneDocumento = ST._actaGenerada || ST._informeGenerado;
+  const tieneDocumento = ST._actaGenerada || ST._informeGenerado || ST._estadoVisita === 'COMPLETADO';
   const estado = (tieneNorma && tieneArea && tieneLicencia && tieneFotos && tieneDocumento)
     ? 'COMPLETADO' : 'INICIADO';
   if (estado === 'COMPLETADO') {
@@ -4472,6 +4477,21 @@ function aplicarModoSoloLectura() {
   // Mostrar sección fotos con solo link Drive
   mostrarBotonFotosExistente(true);
   notif('✅ Registro completado — solo lectura', 'exito');
+}
+
+function aplicarModoEdicionPreActa() {
+  // Fotos: mostrar con subida habilitada
+  mostrarBotonFotosExistente(false);
+  // Bloquear solo el toggle PQR/Oficio (ya no puede cambiarse)
+  const rgOficio = document.getElementById('rg-oficio');
+  if (rgOficio) { rgOficio.style.pointerEvents = 'none'; rgOficio.style.opacity = '0.6'; }
+  // Mostrar botón guardar
+  const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
+  if (btnGuardar) {
+    btnGuardar.style.display = '';
+    btnGuardar.innerHTML = '💾 Actualizar registro';
+  }
+  notif('COMPLETADO — puedes modificar el formulario antes de generar el acta', 'info');
 }
 
 // Mostrar sección fotos en registros existentes
