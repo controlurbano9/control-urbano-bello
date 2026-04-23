@@ -2504,7 +2504,16 @@ function prepararFormulario(fila, filaIdx) {
     document.getElementById('f-radicado').value = radVal;
     const fechaGuardada = fila['FECHA DE VISITA'] || celda(fila, 15) || '';
     document.getElementById('f-fecha-visita').value = fechaAIso(fechaGuardada) || new Date().toISOString().split('T')[0];
-    document.getElementById('f-fecha-radicado').value = fila['FECHA RADICADO'] || celda(fila, 2);
+    // Fecha radicado — convertir a ISO (el input type=date necesita YYYY-MM-DD)
+    const fechaRadBD = fechaAIso(fila['FECHA RADICADO'] || celda(fila, 2) || '');
+    document.getElementById('f-fecha-radicado').value = fechaRadBD;
+    // Mostrar el grupo si tiene fecha (PQR/queja con fecha en BD)
+    if (fechaRadBD && !esOficioFila) {
+      const grp = document.getElementById('grupo-fecha-radicado');
+      if (grp) { grp.style.display = 'block'; }
+      const inp = document.getElementById('f-fecha-radicado');
+      if (inp) { inp.readOnly = true; inp.style.background = 'var(--gris-bg)'; }
+    }
     // Para oficio: guardar fecha de visita como primera (visita 1 = la misma fecha)
     if (esOficioFila) ST._fechaPrimeraVisita = fechaGuardada || '';
 
@@ -2673,6 +2682,33 @@ function prepararFormulario(fila, filaIdx) {
     document.querySelectorAll('#chips-visitador .chip-vis').forEach(c => {
       if (visGuardados.includes(c.dataset.val)) c.classList.add('activo');
     });
+
+    // Modo solo lectura para registros COMPLETADOS — solo el admin puede modificarlos desde Gestión
+    if (ST._estadoVisita === 'COMPLETADO') {
+      const formCont = document.getElementById('form-visita-contenedor');
+      if (formCont) {
+        formCont.querySelectorAll('input, textarea, select').forEach(el => {
+          el.readOnly = true;
+          el.disabled = true;
+          el.style.background = 'var(--gris-bg)';
+          el.style.pointerEvents = 'none';
+        });
+        formCont.querySelectorAll('.radio-opcion, .chip-vis, .chip-inf, .btn-seleccionable').forEach(el => {
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0.7';
+        });
+      }
+      const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
+      if (btnGuardar) btnGuardar.style.display = 'none';
+      const infoDiv = document.getElementById('info-nvisita');
+      if (infoDiv) {
+        infoDiv.style.display = 'block';
+        infoDiv.textContent = '🔒 Registro COMPLETADO — Solo lectura';
+        infoDiv.style.background = '#f0f0f0';
+        infoDiv.style.color = '#666';
+        infoDiv.style.borderColor = '#ccc';
+      }
+    }
   }
 }
 
@@ -2692,6 +2728,10 @@ function nuevaVisitaDesde(radicado, indices) {
 }
 
 async function guardarRegistro() {
+  if (ST._estadoVisita === 'COMPLETADO') {
+    notif('Registro COMPLETADO — solo el admin puede modificarlo desde Gestión', 'error');
+    return;
+  }
   const fechaVisitaVal = document.getElementById('f-fecha-visita').value;
 
   // Sin bloqueo por panel — el inspector puede actualizar las veces necesarias
@@ -2762,7 +2802,7 @@ async function guardarRegistro() {
       const filaExistente = ST.datos.find(f => {
         if ((f['RADICADO']||f[1]||'') !== radicado) return false;
         const est = (f['ESTADO VISITA']||f[13]||'').toUpperCase();
-        return est === 'PENDIENTE' || est === 'PQR PENDIENTE' || est === 'INICIADO' || est === 'REALIZADA';
+        return est === 'PENDIENTE' || est === 'PQR PENDIENTE' || est === 'ASIGNADO' || est === 'INICIADO' || est === 'REALIZADA';
       });
       if (filaExistente) {
         ST.filaEditando = filaExistente._idx;
@@ -2781,12 +2821,7 @@ async function guardarRegistro() {
                     document.getElementById('area-no-medible')?.checked;
   const tieneLicencia = getRadVal('rg-licencia-aportada');
   const tieneFotos = ST._fotosSubidas || ST._idCarpetaFotos;
-  const tieneDocumento = ST._actaGenerada || ST._informeGenerado || ST._estadoVisita === 'COMPLETADO';
-  const estado = (tieneNorma && tieneArea && tieneLicencia && tieneFotos && tieneDocumento)
-    ? 'COMPLETADO' : 'INICIADO';
-  if (estado === 'COMPLETADO') {
-    window.registrarLog && window.registrarLog('Registro completado: ' + (radicado||''));
-  }
+  const estado = 'INICIADO'; // Solo el admin marca COMPLETADO desde la pestaña Gestión
   const obra = getRadVal('rg-estado-obra');
   const quebrada = getRadVal('rg-quebrada');
   const susp = getRadVal('rg-suspension');
@@ -2904,9 +2939,14 @@ async function guardarRegistro() {
       await actualizarFila(ST.filaEditando, vals);
       notif('✓ Registro actualizado', 'exito');
     } else {
-      await agregarFila(vals);
+      const resAgregar = await agregarFila(vals);
+      // Guardar la fila recién creada para que los siguientes guardados actualicen en vez de crear nueva fila
+      if (resAgregar && resAgregar.fila) {
+        ST.filaEditando = resAgregar.fila;
+        ST._estadoVisita = 'INICIADO';
+      }
       notif('✓ Registro guardado', 'exito');
-      // WhatsApp automático al crear registro nuevo
+      // WhatsApp automático solo en la primera creación
       enviarWhatsAppNuevoRegistro(vals);
     }
     // Después del primer guardado: cambiar botón y actualizar panel
@@ -2943,6 +2983,7 @@ function enviarWhatsAppNuevoRegistro(vals) {
     const fecha      = vals[14] || '';
     const visitador  = vals[16] || ST.usuario || '';
     const infraccion = vals[22] || '';
+    const linkDrive  = vals[54] || '';
 
     const msg = `🏗️ *Nueva visita registrada*\n` +
       `📋 Radicado: ${radicado}\n` +
@@ -2950,6 +2991,7 @@ function enviarWhatsAppNuevoRegistro(vals) {
       `📅 Fecha: ${fecha}\n` +
       `👷 Inspector: ${visitador}\n` +
       (infraccion ? `⚠️ Tipo: ${infraccion}\n` : '') +
+      (linkDrive ? `📁 Drive: ${linkDrive}\n` : '') +
       `\n_Inspección N°9 · Control Urbano Bello_`;
 
     // Envío via webhook principal (evita CORS de callmebot)
@@ -3702,16 +3744,21 @@ async function verificarRadicado() {
     const grupoFecha = document.getElementById('grupo-fecha-radicado');
 
     if (coincidencias.length > 0) {
-      const soloPendiente = coincidencias.length === 1 &&
-        ['PENDIENTE','PQR PENDIENTE'].includes((coincidencias[0]['ESTADO VISITA'] || coincidencias[0][7] || '').toUpperCase());
+      // Buscar registro activo (pendiente, asignado, iniciado) — si existe, actualizar en lugar de crear nuevo
+      const ESTADOS_ACTIVOS = ['PENDIENTE','PQR PENDIENTE','ASIGNADO','INICIADO','REALIZADA'];
+      const activoIdx = coincidencias.findIndex(f =>
+        ESTADOS_ACTIVOS.includes((f['ESTADO VISITA'] || f[13] || '').toUpperCase())
+      );
       let nVisita;
-      if (soloPendiente) {
-        nVisita = 1;
-        ST.filaEditando = coincidencias[0]._idx;
-        ST._filaPendiente = coincidencias[0];
+      if (activoIdx >= 0) {
+        const activo = coincidencias[activoIdx];
+        nVisita = Number(activo['N° VISITA'] || activo[16]) || 1;
+        ST.filaEditando = activo._idx;
+        ST._filaPendiente = activo;
       } else {
         nVisita = coincidencias.length + 1;
         ST._filaPendiente = null;
+        ST.filaEditando = null;
       }
       ST.nVisita = nVisita;
       ST.radicadoEncontrado = true;
@@ -3775,8 +3822,8 @@ async function verificarRadicado() {
       }
 
       // Info visita
-      // Arrastrar fecha de radicado de la primera visita (col C = índice 2)
-      document.getElementById('f-fecha-radicado').value = primera['FECHA RADICADO'] || primera[2] || '';
+      // Arrastrar fecha de radicado de la primera visita (col C = índice 2) — convertir a ISO para input type=date
+      document.getElementById('f-fecha-radicado').value = fechaAIso(primera['FECHA RADICADO'] || primera[2] || '');
       // Para oficio: guardar fecha de la primera visita (no hay fechaRadicado, se usa la de la visita 1)
       ST._fechaPrimeraVisita = primera['FECHA DE VISITA'] || primera[15] || '';
       // Fecha de visita por defecto = hoy (si no la tiene)
@@ -5486,8 +5533,8 @@ function recopilarDatosF46() {
     radicado: ST.esOficio ? (document.getElementById('f-orden').value ? 'OFICIO-' + document.getElementById('f-orden').value : '') : document.getElementById('f-radicado').value,
     fechaVisita: document.getElementById('f-fecha-visita').value,
     fechaRadicado: ST.esOficio
-      ? (ST._fechaPrimeraVisita || document.getElementById('f-fecha-visita').value)
-      : document.getElementById('f-fecha-radicado').value,
+      ? (ST._fechaPrimeraVisita || isoAFecha(document.getElementById('f-fecha-visita').value))
+      : isoAFecha(document.getElementById('f-fecha-radicado').value),
     nVisita: ST.nVisita || 1,
     objetoVisita: ST.esOficio ? 'Verificación integridad urbanística' : 'Atención queja',
     direccion: document.getElementById('f-direccion').value,
@@ -6002,15 +6049,15 @@ function mostrarDropdownAsignar(event, filaSheets) {
 }
 
 function asignarInspector(filaSheets, nombre) {
-  const fecha = new Date().toLocaleDateString('es-CO');
-  const url = CFG.webhook + '?accion=asignarVisita&fila=' + filaSheets + 
-              '&inspector=' + encodeURIComponent(nombre) + 
-              '&fecha=' + encodeURIComponent(fecha);
+  const fechaDDMMYYYY = hoyDDMMYYYY();
+  const url = CFG.webhook + '?accion=asignarRadicado&fila=' + filaSheets +
+              '&inspector=' + encodeURIComponent(nombre) +
+              '&fechaAsignacion=' + encodeURIComponent(fechaDDMMYYYY);
   fetch(url)
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
-        notif('Asignado a ' + nombre, 'ok');
+        notif('Asignado a ' + nombre + ' — estado ASIGNADO', 'ok');
         cerrarDropdownAsignar();
         cargarGestion();
       } else {
