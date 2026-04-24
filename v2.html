@@ -2436,7 +2436,8 @@ function prepararFormulario(fila, filaIdx) {
               ST._ssIdActa      = d.ssIdActa;
               ST._actaGenerada  = true;
             }
-            actualizarBotonesActa(); // re-evaluar ambos botones con datos completos
+            actualizarBotonesActa(); // re-evaluar botones con datos completos
+            actualizarPanelEstado(); // re-evaluar panel tras resolución async
           })
           .catch(() => {});
       }
@@ -2452,7 +2453,8 @@ function prepararFormulario(fila, filaIdx) {
     // El Doc del registro fotográfico no se guarda en BD (vive en la carpeta de visita)
     ST._docIdRegistroFotos   = null;
     ST._linkDocRegistroFotos = null;
-    ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
+    ST._actaGenerada    = !!(ST._linkSheetActa || ST._linkPdfActa);
+    ST._informeGenerado = !!(fila['LINK_PDF_INFORME'] || fila['LINK_DOCX_INFORME']);
     actualizarBotonesActa();
     // Cambiar botón a "Actualizar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
@@ -4445,6 +4447,11 @@ function actualizarPanelEstado() {
     {
       label: 'Acta o Informe',
       ok: !!(ST._actaGenerada || ST._informeGenerado)
+    },
+    {
+      // Solo aplica si hay carpeta de fotos — sin carpeta no es requisito
+      label: 'Registro fotográfico',
+      ok: !ST._idCarpetaFotos || !!(ST._docIdRegistroFotos || ST._linkDocRegistroFotos)
     }
   ];
 
