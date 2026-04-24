@@ -2547,6 +2547,15 @@ function prepararFormulario(fila, filaIdx) {
       }
       // Mostrar mapa con pin (arrastrable solo si no está completado)
       setTimeout(() => mostrarMapaGPS(ST.gpsLat, ST.gpsLon, !esCompletado), 200);
+    } else {
+      // Sin coordenadas previas — si está COMPLETADO, ocultar caja y botón GPS igual
+      const estSinCoords = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
+      if (estSinCoords === 'COMPLETADO' || estSinCoords === 'COMPLETADA') {
+        const gpsBoxSC = document.getElementById('gps-box');
+        const btnGpsSC = document.querySelector('[onclick="obtenerGPS()"]');
+        if (gpsBoxSC) gpsBoxSC.style.display = 'none';
+        if (btnGpsSC) btnGpsSC.style.display = 'none';
+      }
     }
 
     // Persona que atiende [7]=H:NOMBRE [8]=I:ID [9]=J:TEL [10]=K:RELACION [11]=L:DIR [12]=M:EMAIL
@@ -3126,6 +3135,8 @@ function mostrarMapaGPS(lat, lng, draggable) {
           notif('📌 Coordenadas actualizadas — consultando norma POT', 'exito');
           // Re-consultar norma POT con el nuevo punto
           consultarNormaPOT(pos.lat, pos.lng);
+          // Persistir coordenadas ajustadas en BD si hay fila en edición
+          if (ST.filaEditando) actualizarCoordenadasEnBD(pos.lat, pos.lng);
         });
       }
       // Forzar redibujado (necesario si el contenedor estaba oculto)
@@ -3151,6 +3162,28 @@ function mostrarMapaGPS(lat, lng, draggable) {
       ST._leafletMarker.dragging.disable();
     }
     setTimeout(() => ST._leafletMap.invalidateSize(), 350);
+  }
+}
+
+// Guarda coordenadas ajustadas en BD sin reescribir toda la fila
+async function actualizarCoordenadasEnBD(lat, lon) {
+  if (!ST.filaEditando) return;
+  try {
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      body: JSON.stringify({
+        accion: 'actualizarCoordenadas',
+        fila: ST.filaEditando,
+        lat: lat.toFixed(6),
+        lon: lon.toFixed(6),
+        mapa: `https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}`
+      })
+    });
+    if (r.ok) {
+      document.getElementById('gps-dir').textContent = 'Coordenadas guardadas en BD ✓';
+    }
+  } catch(e) {
+    console.warn('[GPS] No se pudo guardar coordenadas en BD:', e);
   }
 }
 
@@ -4257,11 +4290,12 @@ function mostrarPanelRF(fotos) {
     const item = document.createElement('div');
     item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
     item.innerHTML = `
-      <img src="data:${foto.mimeType};base64,${foto.base64}"
-        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
+      <img src="https://drive.google.com/thumbnail?id=${foto.id || foto.fileId || ''}&sz=w800"
+        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0; background:var(--slate-100);"
+        onerror="this.style.opacity='0.3'">
       <div style="flex:1;">
         <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${(foto.descripcion || '').replace(/"/g, '&quot;')}"
+        <input type="text" value="${(foto.descripcion || 'Sin descripción').replace(/"/g, '&quot;')}"
           id="desc-rf-${i}"
           maxlength="60"
           placeholder="Descripción (máx. 8 palabras)"
@@ -4278,7 +4312,7 @@ function confirmarRFConFotos() {
   const fotos = window._fotosRevisionRF || [];
   fotos.forEach((foto, i) => {
     const input = document.getElementById('desc-rf-' + i);
-    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion) : foto.descripcion;
+    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion || 'Sin descripción') : (foto.descripcion || 'Sin descripción');
   });
   document.getElementById('modal-rf-fotos')?.remove();
   _generarRFDocFinal(fotos);
@@ -4304,7 +4338,7 @@ async function _generarRFDocFinal(fotos) {
         idCarpetaFotos:  ST._idCarpetaFotos  || null,
         fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
           fileId:      f.id || f.fileId,
-          descripcion: f.descripcionFinal || f.descripcion || ''
+          descripcion: f.descripcionFinal || f.descripcion || 'Sin descripción'
         }))
       })
     });
