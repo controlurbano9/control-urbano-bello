@@ -1861,33 +1861,26 @@ async function leerHoja() {
 
 // Lee encabezados y devuelve función para acceder por nombre de columna
 async function leerHojaConHeaders() {
-  // ⚠️ Fetch directo (sin leerHoja) para preservar índices reales de fila en el Sheet.
-  // leerHoja() filtra filas con RADICADO vacío ANTES de calcular _idx, lo que desplaza
-  // todos los índices y hace que las escrituras de vuelta al Sheet apunten a la fila incorrecta.
-  const r = await fetch(`${BASE}/values/${encodeURIComponent(CFG.hoja)}?${KEY}`);
-  if (!r.ok) throw new Error('Error leyendo hoja: ' + r.status);
-  const d = await r.json();
-  const filas = d.values || [];
+  const filas = await leerHoja();
   if (!filas || filas.length < 1) return { headers: [], datos: [] };
   const headers = filas[0];
-  // _idx se asigna ANTES de filtrar — coincide con la fila real en el Sheet (1-based, fila 1 = encabezados)
-  const datos = filas.slice(1)
-    .map((fila, i) => {
-      const obj = { _idx: i + 2 };
-      headers.forEach((h, j) => {
-        const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
-        obj[h] = val;
-        obj[j] = val;
-      });
-      return obj;
-    })
-    .filter(obj => obj['RADICADO'] && obj['RADICADO'].trim() !== '');
+  const datos = filas.slice(1).map((fila, i) => {
+    // Crear objeto con acceso por nombre Y por índice
+    const obj = { _idx: i + 2 }; // fila real en la hoja (1-based)
+    headers.forEach((h, j) => {
+      const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
+      obj[h] = val;
+      obj[j] = val; // también por índice para compatibilidad
+    });
+    return obj;
+  });
   return { headers, datos };
 }
 
 async function agregarFila(valores) {
   const r = await fetch(CFG.webhook, {
     method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
     body: JSON.stringify({ accion: 'agregar', valores }),
   });
   if (!r.ok) throw new Error('Error al guardar: ' + r.status);
@@ -1899,6 +1892,7 @@ async function agregarFila(valores) {
 async function actualizarFila(filaNum, valores) {
   const r = await fetch(CFG.webhook, {
     method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
     body: JSON.stringify({ accion: 'actualizar', fila: filaNum, valores }),
   });
   if (!r.ok) throw new Error('Error al actualizar: ' + r.status);
@@ -2444,8 +2438,7 @@ function prepararFormulario(fila, filaIdx) {
               ST._ssIdActa      = d.ssIdActa;
               ST._actaGenerada  = true;
             }
-            actualizarBotonesActa(); // re-evaluar botones con datos completos
-            actualizarPanelEstado(); // re-evaluar panel tras resolución async
+            actualizarBotonesActa(); // re-evaluar ambos botones con datos completos
           })
           .catch(() => {});
       }
@@ -2461,8 +2454,7 @@ function prepararFormulario(fila, filaIdx) {
     // El Doc del registro fotográfico no se guarda en BD (vive en la carpeta de visita)
     ST._docIdRegistroFotos   = null;
     ST._linkDocRegistroFotos = null;
-    ST._actaGenerada    = !!(ST._linkSheetActa || ST._linkPdfActa);
-    ST._informeGenerado = !!(fila['LINK_PDF_INFORME'] || fila['LINK_DOCX_INFORME']);
+    ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
     actualizarBotonesActa();
     // Cambiar botón a "Actualizar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
@@ -2557,15 +2549,6 @@ function prepararFormulario(fila, filaIdx) {
       }
       // Mostrar mapa con pin (arrastrable solo si no está completado)
       setTimeout(() => mostrarMapaGPS(ST.gpsLat, ST.gpsLon, !esCompletado), 200);
-    } else {
-      // Sin coordenadas previas — si está COMPLETADO, ocultar caja y botón GPS igual
-      const estSinCoords = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
-      if (estSinCoords === 'COMPLETADO' || estSinCoords === 'COMPLETADA') {
-        const gpsBoxSC = document.getElementById('gps-box');
-        const btnGpsSC = document.querySelector('[onclick="obtenerGPS()"]');
-        if (gpsBoxSC) gpsBoxSC.style.display = 'none';
-        if (btnGpsSC) btnGpsSC.style.display = 'none';
-      }
     }
 
     // Persona que atiende [7]=H:NOMBRE [8]=I:ID [9]=J:TEL [10]=K:RELACION [11]=L:DIR [12]=M:EMAIL
@@ -2701,33 +2684,6 @@ function prepararFormulario(fila, filaIdx) {
     document.querySelectorAll('#chips-visitador .chip-vis').forEach(c => {
       if (visGuardados.includes(c.dataset.val)) c.classList.add('activo');
     });
-
-    // Modo solo lectura para registros COMPLETADOS — solo el admin puede modificarlos desde Gestión
-    if (ST._estadoVisita === 'COMPLETADO') {
-      const formCont = document.getElementById('form-visita-contenedor');
-      if (formCont) {
-        formCont.querySelectorAll('input, textarea, select').forEach(el => {
-          el.readOnly = true;
-          el.disabled = true;
-          el.style.background = 'var(--gris-bg)';
-          el.style.pointerEvents = 'none';
-        });
-        formCont.querySelectorAll('.radio-opcion, .chip-vis, .chip-inf, .btn-seleccionable').forEach(el => {
-          el.style.pointerEvents = 'none';
-          el.style.opacity = '0.7';
-        });
-      }
-      const btnGuardar = document.querySelector('[onclick="guardarRegistro()"]');
-      if (btnGuardar) btnGuardar.style.display = 'none';
-      const infoDiv = document.getElementById('info-nvisita');
-      if (infoDiv) {
-        infoDiv.style.display = 'block';
-        infoDiv.textContent = '🔒 Registro COMPLETADO — Solo lectura';
-        infoDiv.style.background = '#f0f0f0';
-        infoDiv.style.color = '#666';
-        infoDiv.style.borderColor = '#ccc';
-      }
-    }
   }
 }
 
@@ -2747,10 +2703,6 @@ function nuevaVisitaDesde(radicado, indices) {
 }
 
 async function guardarRegistro() {
-  if (ST._estadoVisita === 'COMPLETADO') {
-    notif('Registro COMPLETADO — solo el admin puede modificarlo desde Gestión', 'error');
-    return;
-  }
   const fechaVisitaVal = document.getElementById('f-fecha-visita').value;
 
   // Sin bloqueo por panel — el inspector puede actualizar las veces necesarias
@@ -2821,7 +2773,7 @@ async function guardarRegistro() {
       const filaExistente = ST.datos.find(f => {
         if ((f['RADICADO']||f[1]||'') !== radicado) return false;
         const est = (f['ESTADO VISITA']||f[13]||'').toUpperCase();
-        return est === 'PENDIENTE' || est === 'PQR PENDIENTE' || est === 'ASIGNADO' || est === 'INICIADO' || est === 'REALIZADA';
+        return est === 'PENDIENTE' || est === 'PQR PENDIENTE' || est === 'INICIADO' || est === 'REALIZADA';
       });
       if (filaExistente) {
         ST.filaEditando = filaExistente._idx;
@@ -2840,7 +2792,12 @@ async function guardarRegistro() {
                     document.getElementById('area-no-medible')?.checked;
   const tieneLicencia = getRadVal('rg-licencia-aportada');
   const tieneFotos = ST._fotosSubidas || ST._idCarpetaFotos;
-  const estado = 'INICIADO'; // Solo el admin marca COMPLETADO desde la pestaña Gestión
+  const tieneDocumento = ST._actaGenerada || ST._informeGenerado || ST._estadoVisita === 'COMPLETADO';
+  const estado = (tieneNorma && tieneArea && tieneLicencia && tieneFotos && tieneDocumento)
+    ? 'COMPLETADO' : 'INICIADO';
+  if (estado === 'COMPLETADO') {
+    window.registrarLog && window.registrarLog('Registro completado: ' + (radicado||''));
+  }
   const obra = getRadVal('rg-estado-obra');
   const quebrada = getRadVal('rg-quebrada');
   const susp = getRadVal('rg-suspension');
@@ -2958,14 +2915,9 @@ async function guardarRegistro() {
       await actualizarFila(ST.filaEditando, vals);
       notif('✓ Registro actualizado', 'exito');
     } else {
-      const resAgregar = await agregarFila(vals);
-      // Guardar la fila recién creada para que los siguientes guardados actualicen en vez de crear nueva fila
-      if (resAgregar && resAgregar.fila) {
-        ST.filaEditando = resAgregar.fila;
-        ST._estadoVisita = 'INICIADO';
-      }
+      await agregarFila(vals);
       notif('✓ Registro guardado', 'exito');
-      // WhatsApp automático solo en la primera creación
+      // WhatsApp automático al crear registro nuevo
       enviarWhatsAppNuevoRegistro(vals);
     }
     // Después del primer guardado: cambiar botón y actualizar panel
@@ -3002,7 +2954,6 @@ function enviarWhatsAppNuevoRegistro(vals) {
     const fecha      = vals[14] || '';
     const visitador  = vals[16] || ST.usuario || '';
     const infraccion = vals[22] || '';
-    const linkDrive  = vals[54] || '';
 
     const msg = `🏗️ *Nueva visita registrada*\n` +
       `📋 Radicado: ${radicado}\n` +
@@ -3010,7 +2961,6 @@ function enviarWhatsAppNuevoRegistro(vals) {
       `📅 Fecha: ${fecha}\n` +
       `👷 Inspector: ${visitador}\n` +
       (infraccion ? `⚠️ Tipo: ${infraccion}\n` : '') +
-      (linkDrive ? `📁 Drive: ${linkDrive}\n` : '') +
       `\n_Inspección N°9 · Control Urbano Bello_`;
 
     // Envío via webhook principal (evita CORS de callmebot)
@@ -3145,8 +3095,6 @@ function mostrarMapaGPS(lat, lng, draggable) {
           notif('📌 Coordenadas actualizadas — consultando norma POT', 'exito');
           // Re-consultar norma POT con el nuevo punto
           consultarNormaPOT(pos.lat, pos.lng);
-          // Persistir coordenadas ajustadas en BD si hay fila en edición
-          if (ST.filaEditando) actualizarCoordenadasEnBD(pos.lat, pos.lng);
         });
       }
       // Forzar redibujado (necesario si el contenedor estaba oculto)
@@ -3172,28 +3120,6 @@ function mostrarMapaGPS(lat, lng, draggable) {
       ST._leafletMarker.dragging.disable();
     }
     setTimeout(() => ST._leafletMap.invalidateSize(), 350);
-  }
-}
-
-// Guarda coordenadas ajustadas en BD sin reescribir toda la fila
-async function actualizarCoordenadasEnBD(lat, lon) {
-  if (!ST.filaEditando) return;
-  try {
-    const r = await fetch(CFG.webhook, {
-      method: 'POST',
-      body: JSON.stringify({
-        accion: 'actualizarCoordenadas',
-        fila: ST.filaEditando,
-        lat: lat.toFixed(6),
-        lon: lon.toFixed(6),
-        mapa: `https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}`
-      })
-    });
-    if (r.ok) {
-      document.getElementById('gps-dir').textContent = 'Coordenadas guardadas en BD ✓';
-    }
-  } catch(e) {
-    console.warn('[GPS] No se pudo guardar coordenadas en BD:', e);
   }
 }
 
@@ -3787,21 +3713,16 @@ async function verificarRadicado() {
     const grupoFecha = document.getElementById('grupo-fecha-radicado');
 
     if (coincidencias.length > 0) {
-      // Buscar registro activo (pendiente, asignado, iniciado) — si existe, actualizar en lugar de crear nuevo
-      const ESTADOS_ACTIVOS = ['PENDIENTE','PQR PENDIENTE','ASIGNADO','INICIADO','REALIZADA'];
-      const activoIdx = coincidencias.findIndex(f =>
-        ESTADOS_ACTIVOS.includes((f['ESTADO VISITA'] || f[13] || '').toUpperCase())
-      );
+      const soloPendiente = coincidencias.length === 1 &&
+        ['PENDIENTE','PQR PENDIENTE'].includes((coincidencias[0]['ESTADO VISITA'] || coincidencias[0][7] || '').toUpperCase());
       let nVisita;
-      if (activoIdx >= 0) {
-        const activo = coincidencias[activoIdx];
-        nVisita = Number(activo['N° VISITA'] || activo[16]) || 1;
-        ST.filaEditando = activo._idx;
-        ST._filaPendiente = activo;
+      if (soloPendiente) {
+        nVisita = 1;
+        ST.filaEditando = coincidencias[0]._idx;
+        ST._filaPendiente = coincidencias[0];
       } else {
         nVisita = coincidencias.length + 1;
         ST._filaPendiente = null;
-        ST.filaEditando = null;
       }
       ST.nVisita = nVisita;
       ST.radicadoEncontrado = true;
@@ -3865,8 +3786,8 @@ async function verificarRadicado() {
       }
 
       // Info visita
-      // Arrastrar fecha de radicado de la primera visita (col C = índice 2) — convertir a ISO para input type=date
-      document.getElementById('f-fecha-radicado').value = fechaAIso(primera['FECHA RADICADO'] || primera[2] || '');
+      // Arrastrar fecha de radicado de la primera visita (col C = índice 2)
+      document.getElementById('f-fecha-radicado').value = primera['FECHA RADICADO'] || primera[2] || '';
       // Para oficio: guardar fecha de la primera visita (no hay fechaRadicado, se usa la de la visita 1)
       ST._fechaPrimeraVisita = primera['FECHA DE VISITA'] || primera[15] || '';
       // Fecha de visita por defecto = hoy (si no la tiene)
@@ -4300,12 +4221,11 @@ function mostrarPanelRF(fotos) {
     const item = document.createElement('div');
     item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
     item.innerHTML = `
-      <img src="https://drive.google.com/thumbnail?id=${foto.id || foto.fileId || ''}&sz=w800"
-        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0; background:var(--slate-100);"
-        onerror="this.style.opacity='0.3'">
+      <img src="data:${foto.mimeType};base64,${foto.base64}"
+        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
       <div style="flex:1;">
         <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${(foto.descripcion || 'Sin descripción').replace(/"/g, '&quot;')}"
+        <input type="text" value="${(foto.descripcion || '').replace(/"/g, '&quot;')}"
           id="desc-rf-${i}"
           maxlength="60"
           placeholder="Descripción (máx. 8 palabras)"
@@ -4322,7 +4242,7 @@ function confirmarRFConFotos() {
   const fotos = window._fotosRevisionRF || [];
   fotos.forEach((foto, i) => {
     const input = document.getElementById('desc-rf-' + i);
-    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion || 'Sin descripción') : (foto.descripcion || 'Sin descripción');
+    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion) : foto.descripcion;
   });
   document.getElementById('modal-rf-fotos')?.remove();
   _generarRFDocFinal(fotos);
@@ -4348,7 +4268,7 @@ async function _generarRFDocFinal(fotos) {
         idCarpetaFotos:  ST._idCarpetaFotos  || null,
         fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
           fileId:      f.id || f.fileId,
-          descripcion: f.descripcionFinal || f.descripcion || 'Sin descripción'
+          descripcion: f.descripcionFinal || f.descripcion || ''
         }))
       })
     });
@@ -4455,11 +4375,6 @@ function actualizarPanelEstado() {
     {
       label: 'Acta o Informe',
       ok: !!(ST._actaGenerada || ST._informeGenerado)
-    },
-    {
-      // Solo aplica si hay carpeta de fotos — sin carpeta no es requisito
-      label: 'Registro fotográfico',
-      ok: !ST._idCarpetaFotos || !!(ST._docIdRegistroFotos || ST._linkDocRegistroFotos)
     }
   ];
 
@@ -5582,8 +5497,8 @@ function recopilarDatosF46() {
     radicado: ST.esOficio ? (document.getElementById('f-orden').value ? 'OFICIO-' + document.getElementById('f-orden').value : '') : document.getElementById('f-radicado').value,
     fechaVisita: document.getElementById('f-fecha-visita').value,
     fechaRadicado: ST.esOficio
-      ? (ST._fechaPrimeraVisita || isoAFecha(document.getElementById('f-fecha-visita').value))
-      : isoAFecha(document.getElementById('f-fecha-radicado').value),
+      ? (ST._fechaPrimeraVisita || document.getElementById('f-fecha-visita').value)
+      : document.getElementById('f-fecha-radicado').value,
     nVisita: ST.nVisita || 1,
     objetoVisita: ST.esOficio ? 'Verificación integridad urbanística' : 'Atención queja',
     direccion: document.getElementById('f-direccion').value,
@@ -6098,15 +6013,15 @@ function mostrarDropdownAsignar(event, filaSheets) {
 }
 
 function asignarInspector(filaSheets, nombre) {
-  const fechaDDMMYYYY = hoyDDMMYYYY();
-  const url = CFG.webhook + '?accion=asignarRadicado&fila=' + filaSheets +
-              '&inspector=' + encodeURIComponent(nombre) +
-              '&fechaAsignacion=' + encodeURIComponent(fechaDDMMYYYY);
+  const fecha = new Date().toLocaleDateString('es-CO');
+  const url = CFG.webhook + '?accion=asignarVisita&fila=' + filaSheets + 
+              '&inspector=' + encodeURIComponent(nombre) + 
+              '&fecha=' + encodeURIComponent(fecha);
   fetch(url)
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
-        notif('Asignado a ' + nombre + ' — estado ASIGNADO', 'ok');
+        notif('Asignado a ' + nombre, 'ok');
         cerrarDropdownAsignar();
         cargarGestion();
       } else {
