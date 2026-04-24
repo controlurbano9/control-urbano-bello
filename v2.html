@@ -1861,19 +1861,27 @@ async function leerHoja() {
 
 // Lee encabezados y devuelve función para acceder por nombre de columna
 async function leerHojaConHeaders() {
-  const filas = await leerHoja();
+  // ⚠️ Fetch directo (sin leerHoja) para preservar índices reales de fila en el Sheet.
+  // leerHoja() filtra filas con RADICADO vacío ANTES de calcular _idx, lo que desplaza
+  // todos los índices y hace que las escrituras de vuelta al Sheet apunten a la fila incorrecta.
+  const r = await fetch(`${BASE}/values/${encodeURIComponent(CFG.hoja)}?${KEY}`);
+  if (!r.ok) throw new Error('Error leyendo hoja: ' + r.status);
+  const d = await r.json();
+  const filas = d.values || [];
   if (!filas || filas.length < 1) return { headers: [], datos: [] };
   const headers = filas[0];
-  const datos = filas.slice(1).map((fila, i) => {
-    // Crear objeto con acceso por nombre Y por índice
-    const obj = { _idx: i + 2 }; // fila real en la hoja (1-based)
-    headers.forEach((h, j) => {
-      const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
-      obj[h] = val;
-      obj[j] = val; // también por índice para compatibilidad
-    });
-    return obj;
-  });
+  // _idx se asigna ANTES de filtrar — coincide con la fila real en el Sheet (1-based, fila 1 = encabezados)
+  const datos = filas.slice(1)
+    .map((fila, i) => {
+      const obj = { _idx: i + 2 };
+      headers.forEach((h, j) => {
+        const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
+        obj[h] = val;
+        obj[j] = val;
+      });
+      return obj;
+    })
+    .filter(obj => obj['RADICADO'] && obj['RADICADO'].trim() !== '');
   return { headers, datos };
 }
 
