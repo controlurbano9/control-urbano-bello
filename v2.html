@@ -4331,10 +4331,24 @@ async function analizarFotosEnModal(fotos) {
     try {
       const url = CFG.webhook + '?accion=describirFotoDesdeId&fileId=' + encodeURIComponent(fileId);
       const r   = await fetch(url);
-      const d   = await r.json();
-      foto.descripcion  = d.descripcion || '';
-      inputEl.value     = d.descripcion || '';
+
+      // Verificar que GAS respondió JSON válido (no HTML de error/timeout)
+      const contentType = r.headers.get('content-type') || '';
+      if (!contentType.includes('json')) {
+        const raw = await r.text();
+        console.error('[IA foto ' + (i+1) + '] GAS respondió no-JSON:', raw.slice(0, 200));
+        throw new Error('respuesta no-JSON de GAS');
+      }
+
+      const d = await r.json();
+      console.log('[IA foto ' + (i+1) + ']', d);
+
+      const desc = (d.descripcion && d.descripcion !== 'Sin descripción') ? d.descripcion : '';
+      foto.descripcion = desc;
+      inputEl.value    = desc;
+
     } catch(e) {
+      console.error('[IA foto ' + (i+1) + '] Error:', e.message);
       foto.descripcion = '';
       inputEl.value    = '';
     } finally {
