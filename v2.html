@@ -4341,7 +4341,7 @@ async function analizarFotosEnModal(fotos) {
       }
 
       const d = await r.json();
-      console.log('[IA foto ' + (i+1) + ']', d);
+      console.log('[IA foto ' + (i+1) + '] desc="' + d.descripcion + '" debug=' + d.debug);
 
       const desc = (d.descripcion && d.descripcion !== 'Sin descripción') ? d.descripcion : '';
       foto.descripcion = desc;
