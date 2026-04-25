@@ -4303,17 +4303,56 @@ function mostrarPanelRF(fotos) {
         onerror="this.style.opacity='0.3'">
       <div style="flex:1;">
         <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${(foto.descripcion || 'Sin descripción').replace(/"/g, '&quot;')}"
+        <input type="text" value=""
           id="desc-rf-${i}"
           maxlength="60"
-          placeholder="Descripción (máx. 8 palabras)"
-          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
+          placeholder="⏳ IA analizando..."
+          disabled
+          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box; color:var(--texto-suave);">
       </div>
     `;
     grid.appendChild(item);
   });
 
   window._fotosRevisionRF = fotos;
+  // Lanzar análisis IA para cada foto usando el thumbnail de Drive
+  analizarFotosEnModal(fotos);
+}
+
+// Analiza cada foto del modal vía thumbnail comprimido de Drive → Gemini browser.
+// Actualiza el input en tiempo real conforme llegan las respuestas.
+async function analizarFotosEnModal(fotos) {
+  for (let i = 0; i < fotos.length; i++) {
+    const foto   = fotos[i];
+    const fileId = foto.id || foto.fileId;
+    const inputEl = document.getElementById('desc-rf-' + i);
+    if (!fileId || !inputEl) continue;
+
+    try {
+      // Drive sirve thumbnails comprimidos (~50-150 KB vs 3-5 MB originales)
+      const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+      const respImg  = await fetch(thumbUrl, { mode: 'cors' });
+      if (!respImg.ok) throw new Error('thumbnail HTTP ' + respImg.status);
+      const blob   = await respImg.blob();
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(blob);
+      });
+
+      const desc = await describirFotoEnNavegador(base64, blob.type || 'image/jpeg');
+      foto.descripcion = desc || '';
+      inputEl.value = desc || '';
+    } catch(e) {
+      foto.descripcion = '';
+      inputEl.value = '';
+    } finally {
+      inputEl.disabled = false;
+      inputEl.placeholder = 'Descripción (máx. 8 palabras)';
+      inputEl.style.color = '';
+    }
+  }
 }
 
 function confirmarRFConFotos() {
