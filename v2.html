@@ -4319,36 +4319,26 @@ function mostrarPanelRF(fotos) {
   analizarFotosEnModal(fotos);
 }
 
-// Analiza cada foto del modal vía thumbnail comprimido de Drive → Gemini browser.
-// Actualiza el input en tiempo real conforme llegan las respuestas.
+// Analiza cada foto del modal llamando al webhook por fileId (una a la vez).
+// GAS lee el archivo de Drive y llama a Gemini/Groq sin restricciones CORS.
 async function analizarFotosEnModal(fotos) {
   for (let i = 0; i < fotos.length; i++) {
-    const foto   = fotos[i];
-    const fileId = foto.id || foto.fileId;
+    const foto    = fotos[i];
+    const fileId  = foto.id || foto.fileId;
     const inputEl = document.getElementById('desc-rf-' + i);
     if (!fileId || !inputEl) continue;
 
     try {
-      // Drive sirve thumbnails comprimidos (~50-150 KB vs 3-5 MB originales)
-      const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
-      const respImg  = await fetch(thumbUrl, { mode: 'cors' });
-      if (!respImg.ok) throw new Error('thumbnail HTTP ' + respImg.status);
-      const blob   = await respImg.blob();
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.onload = e => res(e.target.result.split(',')[1]);
-        reader.onerror = rej;
-        reader.readAsDataURL(blob);
-      });
-
-      const desc = await describirFotoEnNavegador(base64, blob.type || 'image/jpeg');
-      foto.descripcion = desc || '';
-      inputEl.value = desc || '';
+      const url = CFG.webhook + '?accion=describirFotoDesdeId&fileId=' + encodeURIComponent(fileId);
+      const r   = await fetch(url);
+      const d   = await r.json();
+      foto.descripcion  = d.descripcion || '';
+      inputEl.value     = d.descripcion || '';
     } catch(e) {
       foto.descripcion = '';
-      inputEl.value = '';
+      inputEl.value    = '';
     } finally {
-      inputEl.disabled = false;
+      inputEl.disabled    = false;
       inputEl.placeholder = 'Descripción (máx. 8 palabras)';
       inputEl.style.color = '';
     }
