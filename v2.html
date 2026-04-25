@@ -4080,20 +4080,10 @@ window._sugerenciasIA = [];
 
 function previsualizarFotos(input) {
   if (!input.files.length) return;
-  Array.from(input.files).forEach(f => {
-    const idx = window._fotosSeleccionadas.length;
-    window._fotosSeleccionadas.push(f);
-    window._sugerenciasIA.push('pending'); // marcador hasta que IA responda
-    renderizarPreviewFotos();
-    // Disparar análisis IA asíncrono para esta foto
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const base64 = ev.target.result.split(',')[1];
-      analizarFotoConIA(idx, base64, f.type);
-    };
-    reader.readAsDataURL(f);
-  });
-  input.value = '';
+  // Agregar nuevos archivos al arreglo existente (no reemplazar)
+  Array.from(input.files).forEach(f => window._fotosSeleccionadas.push(f));
+  input.value = ''; // limpiar input para permitir re-selección del mismo archivo
+  renderizarPreviewFotos();
 }
 
 function renderizarPreviewFotos() {
@@ -4110,20 +4100,8 @@ function renderizarPreviewFotos() {
   archivos.forEach((file, idx) => {
     const reader = new FileReader();
     reader.onload = ev => {
-      const sug = window._sugerenciasIA[idx];
-      // Indicador visual según estado: analizando / sugerencia lista / vacío
-      const iaHtml = sug === 'pending'
-        ? `<div style="font-size:9px;color:var(--azul,#3b82f6);margin-top:3px;
-                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-                       max-width:80px;" title="IA analizando...">⏳ IA analizando...</div>`
-        : (sug
-            ? `<div style="font-size:9px;color:var(--texto-suave);margin-top:3px;
-                           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-                           max-width:80px;cursor:default;" title="${sug.replace(/"/g,'&quot;')}">✦ ${sug}</div>`
-            : `<div style="font-size:9px;color:var(--texto-suave);margin-top:3px;
-                           max-width:80px;" title="Sin sugerencia — escribe manualmente">✎ manual</div>`);
       const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0; vertical-align:top;';
+      wrap.style.cssText = 'position:relative; display:inline-block; flex-shrink:0;';
       wrap.innerHTML = `
         <img src="${ev.target.result}"
           style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--borde); display:block;">
@@ -4131,8 +4109,7 @@ function renderizarPreviewFotos() {
           style="position:absolute; top:-5px; right:-5px; background:var(--rojo,#e53e3e);
                  color:white; border:none; border-radius:50%; width:18px; height:18px;
                  font-size:10px; font-weight:700; cursor:pointer; line-height:18px;
-                 text-align:center; padding:0;">✕</button>
-        ${iaHtml}`;
+                 text-align:center; padding:0;">✕</button>`;
       preview.appendChild(wrap);
     };
     reader.readAsDataURL(file);
@@ -4143,49 +4120,8 @@ function renderizarPreviewFotos() {
 
 function eliminarFotoPreview(idx) {
   window._fotosSeleccionadas.splice(idx, 1);
-  window._sugerenciasIA.splice(idx, 1);
   renderizarPreviewFotos();
 }
-
-// ─── VISIÓN IA ASÍNCRONA ─────────────────────────────────────────────────────
-// Analiza la foto en el idx indicado y actualiza _sugerenciasIA[idx].
-// Cadena: Gemini directo (browser) → GAS webhook (Groq fallback) → vacío.
-// Al completar re-renderiza el preview para ocultar "⏳ IA analizando...".
-async function analizarFotoConIA(idx, base64, mimeType) {
-  try {
-    // Intento 1: Gemini 2.0 Flash directo desde el browser (sin latencia de GAS)
-    let descripcion = await describirFotoEnNavegador(base64, mimeType);
-
-    if (!descripcion) {
-      // Intento 2: GAS webhook → Groq (llama-4-scout con visión)
-      // Usar google.script.run si la app está embebida en GAS HTML Service
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        descripcion = await new Promise(resolve => {
-          google.script.run
-            .withSuccessHandler(r => resolve((r && r.descripcion) || ''))
-            .withFailureHandler(() => resolve(''))
-            .pedirDescripcionIA(base64, mimeType);
-        });
-      } else {
-        // Contexto Netlify: llamar al webhook con text/plain (evita preflight CORS)
-        const r = await fetch(CFG.webhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ accion: 'pedirDescripcionIA', base64, mimeType })
-        });
-        const d = await r.json();
-        descripcion = (d && d.descripcion) || '';
-      }
-    }
-
-    // Guardar resultado (string vacío = usuario escribe manualmente, sin bloquear)
-    window._sugerenciasIA[idx] = descripcion;
-  } catch(e) {
-    window._sugerenciasIA[idx] = ''; // fallo silencioso — flujo no bloqueado
-  }
-  renderizarPreviewFotos(); // actualizar indicadores en el preview
-}
-
 
 // Descripción IA desde el browser — evita timeout de Apps Script
 async function describirFotoEnNavegador(base64, mimeType) {
@@ -4236,8 +4172,7 @@ async function subirFotos() {
       <span id="prog-errores" style="color:var(--rojo); margin-left:8px;"></span>
     </div>`;
 
-  for (let _fi = 0; _fi < archivos.length; _fi++) {
-    const file = archivos[_fi];
+  for (const file of archivos) {
     try {
       // 1. Leer base64
       const base64 = await new Promise((res, rej) => {
@@ -4258,19 +4193,8 @@ async function subirFotos() {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || 'Error en Drive');
 
-      // 3. Usar sugerencia pre-calculada por analizarFotoConIA; si aún está pendiente
-      //    o falló, llamar describirFotoEnNavegador como último recurso.
-      const sugPrevia = window._sugerenciasIA[_fi];
-      let descripcion;
-      if (sugPrevia && sugPrevia !== 'pending') {
-        descripcion = sugPrevia;
-      } else {
-        document.getElementById('prog-texto').textContent = `Analizando foto ${subidas + 1}...`;
-        descripcion = await describirFotoEnNavegador(base64, file.type);
-      }
-
       subidas++;
-      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion });
+      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion: '' });
 
     } catch(e) {
       errores++;
