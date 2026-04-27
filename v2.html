@@ -739,6 +739,84 @@
     color: var(--texto-suave);
     text-align: center;
   }
+
+  /* ─── AGENDA DIARIA ─────────────────────────────────────────── */
+  .agenda-tabs { display:flex; gap:6px; margin-bottom:14px; }
+  .agenda-tab {
+    flex:1; padding:8px 4px; font-size:13px; font-weight:600;
+    border:1.5px solid var(--borde-med); border-radius:var(--r-sm);
+    background:var(--superficie); color:var(--texto-suave);
+    cursor:pointer; transition:all .18s;
+  }
+  .agenda-tab.activo { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .agenda-tab:hover:not(.activo) { background:var(--slate-100); }
+
+  .visita-card {
+    background:var(--superficie); border-radius:var(--r-md);
+    border:1px solid var(--borde); box-shadow:var(--sombra-sm);
+    padding:14px; margin-bottom:10px; position:relative;
+  }
+  .visita-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .visita-radicado { font-size:13px; font-weight:700; color:var(--texto); font-family:monospace; }
+  .visita-direccion { font-size:13px; color:var(--texto-2); margin-bottom:4px; font-weight:500; }
+  .visita-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .visita-meta-item { font-size:11px; color:var(--texto-suave); }
+
+  .score-badge {
+    display:inline-flex; align-items:center; padding:3px 8px;
+    border-radius:var(--r-full); font-size:11px; font-weight:700; flex-shrink:0;
+  }
+  .score-critico { background:#FEF2F2; color:#DC2626; }
+  .score-alto    { background:#FFF7ED; color:#EA580C; }
+  .score-medio   { background:#FEFCE8; color:#CA8A04; }
+  .score-bajo    { background:#F0FDF4; color:#16A34A; }
+
+  .comuna-chip {
+    display:inline-flex; padding:2px 8px; border-radius:var(--r-full);
+    font-size:11px; font-weight:600; background:var(--azul-bg); color:var(--azul);
+  }
+  .agenda-strip {
+    border-radius:var(--r-sm); padding:10px 14px; margin-bottom:12px;
+    display:flex; align-items:center; gap:10px; font-size:13px;
+  }
+  .agenda-strip.suspendida { background:#FFF7ED; color:#EA580C; border:1px solid #FED7AA; }
+  .agenda-strip.alertas-criticas {
+    background:#FEF2F2; color:#DC2626; border:1px solid #FECACA;
+    flex-direction:column; align-items:flex-start; gap:6px;
+  }
+  .agenda-empty { text-align:center; padding:40px 20px; color:var(--texto-suave); }
+  .agenda-seccion-info {
+    font-size:12px; color:var(--texto-suave); margin-bottom:10px;
+    padding:6px 12px; background:var(--slate-50); border-radius:var(--r-sm);
+    border-left:3px solid var(--brand-accent);
+  }
+  .btn-quitar {
+    position:absolute; top:10px; right:10px; background:none; border:none;
+    cursor:pointer; color:var(--slate-400); width:24px; height:24px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:4px; transition:all .15s;
+  }
+  .btn-quitar:hover { background:var(--rojo-bg); color:var(--rojo); }
+
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(15,23,42,0.5);
+    z-index:300; display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-sheet {
+    background:var(--superficie); border-radius:20px 20px 0 0;
+    padding:20px; width:100%; max-width:460px;
+    max-height:75vh; display:flex; flex-direction:column;
+  }
+  .modal-sheet-titulo { font-size:15px; font-weight:700; margin-bottom:14px; color:var(--texto); }
+  .modal-sheet-lista { overflow-y:auto; flex:1; }
+  .sugerencia-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 0; border-bottom:1px solid var(--borde);
+  }
+  .sugerencia-item:last-child { border-bottom:none; }
+  .sugerencia-info { flex:1; }
+  .sugerencia-rad { font-size:12px; font-weight:700; font-family:monospace; }
+  .sugerencia-dir { font-size:12px; color:var(--texto-suave); }
 </style>
   <!-- Turf.js para consulta espacial POT -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
@@ -805,6 +883,9 @@
     </button>
     <button class="sidebar-btn" id="sd-registros" onclick="irA('pantalla-visitas'); cargarVisitas(); setNav('nav-visitas'); setSidebarActivo('sd-registros')">
       <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Registros
+    </button>
+    <button class="sidebar-btn" id="sd-agenda" onclick="irA('pantalla-agenda'); cargarAgenda(); setSidebarActivo('sd-agenda'); setNav('nav-agenda')">
+      <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12V18zm-3-6h.008v.008H9V12zm0 3h.008v.008H9v-.008zm0 3h.008v.008H9V18zm6-6h.008v.008H15V12zm0 3h.008v.008H15v-.008zm0 3h.008v.008H15V18z"/></svg></span> Agenda
     </button>
     <div class="sidebar-sep"></div>
     <button class="sidebar-btn" id="sd-gestion" onclick="irA('pantalla-gestion'); cargarGestion(); setSidebarActivo('sd-gestion')" style="display:none;">
@@ -1564,6 +1645,51 @@
 
   </div><!-- fin pantalla-nueva-visita -->
 
+  <!-- PANTALLA AGENDA DIARIA -->
+  <div id="pantalla-agenda" class="pantalla pad-bottom">
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="card-titulo" style="margin-bottom:2px;">📅 Agenda del día</div>
+          <div id="agenda-fecha-label" style="font-size:12px;color:var(--texto-suave);"></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span id="agenda-total-badge" style="display:none;" class="score-badge score-bajo"></span>
+          <button class="btn-sm gris" onclick="cargarAgenda(true)" title="Regenerar agenda">🔄</button>
+        </div>
+      </div>
+      <div id="agenda-alertas-strip" style="display:none;margin-top:10px;"></div>
+    </div>
+
+    <div id="agenda-loading" style="text-align:center;padding:48px 0;color:var(--texto-suave);font-size:14px;">
+      <div style="font-size:28px;margin-bottom:10px;">⏳</div>Cargando agenda...
+    </div>
+
+    <div id="agenda-contenido" style="display:none;">
+      <div class="agenda-tabs">
+        <button class="agenda-tab activo" id="tab-btn-manana" onclick="agendaTab('manana')">☀️ Mañana</button>
+        <button class="agenda-tab"        id="tab-btn-tarde"  onclick="agendaTab('tarde')">🌇 Tarde</button>
+        <button class="agenda-tab"        id="tab-btn-rural"  onclick="agendaTab('rural')">🌄 Rural</button>
+      </div>
+      <div id="agenda-tab-manana"></div>
+      <div id="agenda-tab-tarde"  style="display:none;"></div>
+      <div id="agenda-tab-rural"  style="display:none;"></div>
+      <div id="agenda-btn-confirmar" style="display:none;margin-top:4px;">
+        <button class="btn-principal verde" onclick="confirmarAgendaManual()">💾 Confirmar agenda</button>
+        <button class="btn-principal gris"  onclick="descartarCambiosAgenda()">↩️ Descartar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AGREGAR VISITA (admin) -->
+  <div id="modal-agregar-visita" style="display:none;" class="modal-overlay" onclick="if(event.target===this)cerrarModalAgregarVisita()">
+    <div class="modal-sheet">
+      <div class="modal-sheet-titulo">Agregar visita · <span id="modal-agregar-jornada"></span></div>
+      <div id="modal-agregar-lista" class="modal-sheet-lista"></div>
+      <button class="btn-principal gris" onclick="cerrarModalAgregarVisita()" style="margin-top:12px;margin-bottom:0;">Cancelar</button>
+    </div>
+  </div>
+
   <!-- PANTALLA ADMIN -->
   <div id="pantalla-admin" class="pantalla pad-bottom">
     <div class="card" style="margin-bottom:12px;">
@@ -1648,6 +1774,7 @@
   <button class="nav-btn" id="nav-buscar" onclick="irA('pantalla-buscar'); setNav('nav-buscar')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg></span><span>Buscar</span></button>
   <button class="nav-btn" id="nav-nueva" onclick="irA('pantalla-nueva-visita'); prepararFormulario(null); setNav('nav-nueva')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></span><span>Nueva</span></button>
   <button class="nav-btn" id="nav-visitas" onclick="irA('pantalla-visitas'); cargarVisitas(); setNav('nav-visitas')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span><span>Registros</span></button>
+  <button class="nav-btn" id="nav-agenda" onclick="irA('pantalla-agenda'); cargarAgenda(); setNav('nav-agenda')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12V18zm-3-6h.008v.008H9V12zm0 3h.008v.008H9v-.008zm0 3h.008v.008H9V18zm6-6h.008v.008H15V12zm0 3h.008v.008H15v-.008zm0 3h.008v.008H15V18z"/></svg></span><span>Agenda</span></button>
   <button class="nav-btn" id="nav-gestion" onclick="irA('pantalla-gestion'); cargarGestion(); setNav('nav-gestion')" style="display:none;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg></span><span>Gestión</span></button>
 </div>
 
@@ -5055,7 +5182,7 @@ function setNav(id) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('activo'));
   document.getElementById(id)?.classList.add('activo');
   // Sincronizar sidebar desktop
-  const mapa = { 'nav-home':'sd-home','nav-buscar':'sd-buscar','nav-nueva':'sd-nueva','nav-visitas':'sd-registros','nav-registros':'sd-registros' };
+  const mapa = { 'nav-home':'sd-home','nav-buscar':'sd-buscar','nav-nueva':'sd-nueva','nav-visitas':'sd-registros','nav-registros':'sd-registros','nav-agenda':'sd-agenda' };
   if (mapa[id]) setSidebarActivo(mapa[id]);
 }
 
@@ -6343,6 +6470,268 @@ async function marcarCompletado(filaSheets, fechaAsig) {
     hideLoading();
     notif('Error: ' + e.message, 'error');
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AGENDA DIARIA
+// ═══════════════════════════════════════════════════════════════
+
+ST.agendaData      = null;
+ST.agendaMod       = null;
+ST.agendaTab       = 'manana';
+ST.agendaCambiada  = false;
+
+async function cargarAgenda(forzar = false) {
+  if (ST.agendaData && !forzar) { renderAgenda(); return; }
+
+  document.getElementById('agenda-loading').style.display  = 'block';
+  document.getElementById('agenda-contenido').style.display = 'none';
+  document.getElementById('agenda-loading').innerHTML =
+    '<div style="font-size:28px;margin-bottom:10px;">⏳</div>Cargando agenda...';
+
+  try {
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ accion: 'obtenerAgenda' })
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Error del servidor');
+    ST.agendaData     = d;
+    ST.agendaMod      = JSON.parse(JSON.stringify(d));
+    ST.agendaCambiada = false;
+    renderAgenda();
+  } catch(e) {
+    document.getElementById('agenda-loading').innerHTML = `
+      <div style="padding:30px;text-align:center;color:var(--rojo);">
+        <div style="font-size:28px;margin-bottom:8px;">⚠️</div>
+        <div style="font-weight:600;">Error al cargar agenda</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--texto-suave);">${e.message}</div>
+        <button class="btn-sm azul" style="margin-top:12px;" onclick="cargarAgenda(true)">Reintentar</button>
+      </div>`;
+  }
+}
+
+function renderAgenda() {
+  const d = ST.agendaMod;
+  if (!d) return;
+
+  document.getElementById('agenda-loading').style.display   = 'none';
+  document.getElementById('agenda-contenido').style.display = 'block';
+
+  const diasLabel = { lunes:'Lunes', martes:'Martes', 'miércoles':'Miércoles',
+    jueves:'Jueves', viernes:'Viernes', sábado:'Sábado', domingo:'Domingo' };
+  document.getElementById('agenda-fecha-label').textContent =
+    `${diasLabel[d.dia] || d.dia} ${d.fecha}${d.esRural ? ' · Jornada Rural' : ''}`;
+
+  const badge = document.getElementById('agenda-total-badge');
+  if (d.totalPendientes > 0) {
+    badge.textContent = `${d.totalPendientes} pendientes`;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  _renderAlertasStrip(d.alertas);
+  _renderTab('manana', d.jornadas.manana);
+  _renderTab('tarde',  d.jornadas.tarde);
+  _renderTab('rural',  d.jornadas.rural);
+
+  document.getElementById('agenda-btn-confirmar').style.display =
+    (ST.rol === 'ADMIN' && ST.agendaCambiada) ? 'block' : 'none';
+}
+
+function _renderAlertasStrip(alertas) {
+  const el = document.getElementById('agenda-alertas-strip');
+  if (!alertas || alertas.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `<div class="agenda-strip alertas-criticas">
+    <div style="font-weight:700;font-size:13px;">🚨 ${alertas.length} radicado${alertas.length>1?'s':''} crítico${alertas.length>1?'s':''} fuera de agenda</div>
+    ${alertas.slice(0,3).map(a=>`
+      <div style="font-size:12px;padding:4px 8px;background:rgba(255,255,255,0.6);border-radius:6px;width:100%;display:flex;justify-content:space-between;align-items:center;">
+        <span><span style="font-family:monospace;font-weight:700;">${a.radicado}</span>
+        <span style="margin-left:8px;color:var(--texto-suave);">${a.direccion}</span></span>
+        <span class="score-badge score-critico">${a.score.toFixed(1)}</span>
+      </div>`).join('')}
+    ${alertas.length > 3 ? `<div style="font-size:11px;color:var(--rojo);">+ ${alertas.length-3} más · ver hoja ALERTAS en el Sheet</div>` : ''}
+  </div>`;
+}
+
+function _renderTab(cual, jornada) {
+  const cont = document.getElementById(`agenda-tab-${cual}`);
+  if (!jornada) { cont.innerHTML = ''; return; }
+  const esAdmin = ST.rol === 'ADMIN';
+  const { activa, visitas } = jornada;
+  let html = '';
+
+  if (!activa) {
+    const msg = { manana:'Sin jornada mañana (miércoles)', tarde:'Sin jornada tarde (viernes)', rural:'Solo primer viernes del mes' };
+    html = `<div class="agenda-strip suspendida"><span>⏸</span> ${msg[cual]}</div>`;
+  } else if (!visitas || visitas.length === 0) {
+    html = `<div class="agenda-empty">
+      <div style="font-size:28px;margin-bottom:8px;">📭</div>
+      <div style="font-weight:500;">Sin visitas pendientes</div>
+      <div style="font-size:12px;margin-top:4px;">No hay radicados para esta jornada</div>
+    </div>`;
+  } else {
+    const info = { manana:'Comunas 1,4,6,7,10,11', tarde:'Comunas 2,3,5,8,9 (prioritarias)', rural:'Zona Rural' };
+    html += `<div class="agenda-seccion-info">📍 ${info[cual]} · ${visitas.length} visita${visitas.length>1?'s':''} sugerida${visitas.length>1?'s':''}</div>`;
+    visitas.forEach((v, i) => { html += _tarjetaVisita(v, i+1, cual, esAdmin); });
+  }
+
+  if (esAdmin && activa) {
+    const max = cual === 'rural' ? 4 : 3;
+    if (!visitas || visitas.length < max) {
+      html += `<button class="btn-principal secundario" style="margin-top:4px;" onclick="abrirModalAgregarVisita('${cual}')">+ Agregar visita</button>`;
+    }
+  }
+  cont.innerHTML = html;
+}
+
+function _tarjetaVisita(v, num, jornada, esAdmin) {
+  const sc = v.score >= 9 ? 'score-critico' : v.score >= 7 ? 'score-alto' : v.score >= 5 ? 'score-medio' : 'score-bajo';
+  const bcTxt   = v.tieneBc ? '✓ Prioridad IA' : '~ Sin análisis';
+  const bcColor = v.tieneBc ? 'var(--verde)' : 'var(--texto-3)';
+  const radId   = String(v.radicado).replace(/\./g,'');
+  return `
+  <div class="visita-card" id="vc-${jornada}-${radId}">
+    <div class="visita-card-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;font-weight:700;color:var(--texto-suave);background:var(--slate-100);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${num}</span>
+        <span class="visita-radicado">${v.radicado}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="score-badge ${sc}">${v.score.toFixed(1)}</span>
+        ${esAdmin ? `<button class="btn-quitar" onclick="quitarVisitaAgenda('${jornada}','${v.radicado}')" title="Quitar">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>` : ''}
+      </div>
+    </div>
+    <div class="visita-direccion">${v.direccion}</div>
+    <div class="visita-meta">
+      <span class="comuna-chip">C${v.comuna}</span>
+      <span class="visita-meta-item">📍 ${v.barrio}</span>
+      <span class="visita-meta-item">⏳ ${v.diasPendiente}d pendiente</span>
+      <span class="visita-meta-item" style="color:${bcColor};">${bcTxt}</span>
+    </div>
+  </div>`;
+}
+
+function agendaTab(cual) {
+  ST.agendaTab = cual;
+  document.querySelectorAll('.agenda-tab').forEach(b => b.classList.remove('activo'));
+  document.getElementById(`tab-btn-${cual}`)?.classList.add('activo');
+  ['manana','tarde','rural'].forEach(t => {
+    document.getElementById(`agenda-tab-${t}`).style.display = t === cual ? 'block' : 'none';
+  });
+}
+
+function quitarVisitaAgenda(jornada, radicado) {
+  if (ST.rol !== 'ADMIN') return;
+  const j = ST.agendaMod.jornadas[jornada];
+  if (!j) return;
+  j.visitas = j.visitas.filter(v => String(v.radicado) !== String(radicado));
+  ST.agendaCambiada = true;
+  renderAgenda();
+  agendaTab(jornada);
+}
+
+function abrirModalAgregarVisita(jornada) {
+  if (ST.rol !== 'ADMIN') return;
+  ST._modalJornada = jornada;
+  const labels = { manana:'Mañana ☀️', tarde:'Tarde 🌇', rural:'Rural 🌄' };
+  document.getElementById('modal-agregar-jornada').textContent = labels[jornada] || jornada;
+
+  const comunas = jornada === 'rural' ? ['RURAL']
+    : jornada === 'manana' ? [1,4,6,7,10,11] : [2,3,5,8,9];
+
+  const enAgenda = new Set();
+  Object.values(ST.agendaMod.jornadas).forEach(j => (j.visitas||[]).forEach(v => enAgenda.add(String(v.radicado))));
+
+  const candidatos = [...(ST.agendaData.alertas||[]),
+    ...(ST.agendaData.jornadas[jornada]?.visitas||[])]
+    .filter(v => {
+      if (enAgenda.has(String(v.radicado))) return false;
+      if (jornada === 'rural') return v.comuna === 'RURAL';
+      return comunas.includes(parseInt(v.comuna));
+    });
+
+  const lista = document.getElementById('modal-agregar-lista');
+  if (candidatos.length === 0) {
+    lista.innerHTML = `<div style="text-align:center;padding:24px;color:var(--texto-suave);font-size:13px;">Sin candidatos disponibles</div>`;
+  } else {
+    lista.innerHTML = candidatos.slice(0,20).map(v => {
+      const sc = v.score >= 9 ? 'score-critico' : v.score >= 7 ? 'score-alto' : v.score >= 5 ? 'score-medio' : 'score-bajo';
+      const vJson = JSON.stringify(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<div class="sugerencia-item">
+        <div class="sugerencia-info">
+          <div class="sugerencia-rad">${v.radicado} <span class="score-badge ${sc}" style="margin-left:4px;">${v.score.toFixed(1)}</span></div>
+          <div class="sugerencia-dir">${v.direccion} · <span class="comuna-chip">C${v.comuna}</span> · ${v.diasPendiente}d</div>
+        </div>
+        <button class="btn-sm verde" onclick="agregarVisitaAgenda('${jornada}','${vJson}')" style="margin-left:8px;flex-shrink:0;">+</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modal-agregar-visita').style.display = 'flex';
+}
+
+function agregarVisitaAgenda(jornada, vJson) {
+  if (ST.rol !== 'ADMIN') return;
+  const visita = JSON.parse(vJson.replace(/\\'/g,"'"));
+  const j = ST.agendaMod.jornadas[jornada];
+  if (!j) return;
+  j.visitas = j.visitas || [];
+  j.visitas.push(visita);
+  j.activa = true;
+  ST.agendaCambiada = true;
+  cerrarModalAgregarVisita();
+  renderAgenda();
+  agendaTab(jornada);
+}
+
+function cerrarModalAgregarVisita() {
+  document.getElementById('modal-agregar-visita').style.display = 'none';
+}
+
+async function confirmarAgendaManual() {
+  if (ST.rol !== 'ADMIN' || !ST.agendaCambiada) return;
+  const btn = document.querySelector('#agenda-btn-confirmar .btn-principal.verde');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Guardando...';
+  btn.disabled = true;
+  try {
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({
+        accion: 'guardarAgendaManual',
+        fecha:  ST.agendaMod.fecha,
+        agenda: {
+          manana: ST.agendaMod.jornadas.manana.visitas || [],
+          tarde:  ST.agendaMod.jornadas.tarde.visitas  || [],
+          rural:  ST.agendaMod.jornadas.rural.visitas  || []
+        }
+      })
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Error al guardar');
+    ST.agendaData     = JSON.parse(JSON.stringify(ST.agendaMod));
+    ST.agendaCambiada = false;
+    document.getElementById('agenda-btn-confirmar').style.display = 'none';
+    notif('Agenda guardada correctamente', 'ok');
+  } catch(e) {
+    notif('Error al guardar: ' + e.message, 'error');
+  } finally {
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+
+function descartarCambiosAgenda() {
+  ST.agendaMod      = JSON.parse(JSON.stringify(ST.agendaData));
+  ST.agendaCambiada = false;
+  renderAgenda();
+  agendaTab(ST.agendaTab);
 }
 
 </script>
