@@ -1861,19 +1861,27 @@ async function leerHoja() {
 
 // Lee encabezados y devuelve función para acceder por nombre de columna
 async function leerHojaConHeaders() {
-  const filas = await leerHoja();
+  // ⚠️ Fetch directo (sin leerHoja) para preservar índices reales de fila en el Sheet.
+  // leerHoja() filtra filas con RADICADO vacío ANTES de calcular _idx, lo que desplaza
+  // todos los índices y hace que las escrituras de vuelta al Sheet apunten a la fila incorrecta.
+  const r = await fetch(`${BASE}/values/${encodeURIComponent(CFG.hoja)}?${KEY}`);
+  if (!r.ok) throw new Error('Error leyendo hoja: ' + r.status);
+  const d = await r.json();
+  const filas = d.values || [];
   if (!filas || filas.length < 1) return { headers: [], datos: [] };
   const headers = filas[0];
-  const datos = filas.slice(1).map((fila, i) => {
-    // Crear objeto con acceso por nombre Y por índice
-    const obj = { _idx: i + 2 }; // fila real en la hoja (1-based)
-    headers.forEach((h, j) => {
-      const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
-      obj[h] = val;
-      obj[j] = val; // también por índice para compatibilidad
-    });
-    return obj;
-  });
+  // _idx se asigna ANTES de filtrar — coincide con la fila real en el Sheet (1-based, fila 1 = encabezados)
+  const datos = filas.slice(1)
+    .map((fila, i) => {
+      const obj = { _idx: i + 2 };
+      headers.forEach((h, j) => {
+        const val = (fila[j] !== undefined && fila[j] !== null) ? fila[j].toString().trim() : '';
+        obj[h] = val;
+        obj[j] = val;
+      });
+      return obj;
+    })
+    .filter(obj => obj['RADICADO'] && obj['RADICADO'].trim() !== '');
   return { headers, datos };
 }
 
@@ -2436,7 +2444,8 @@ function prepararFormulario(fila, filaIdx) {
               ST._ssIdActa      = d.ssIdActa;
               ST._actaGenerada  = true;
             }
-            actualizarBotonesActa(); // re-evaluar ambos botones con datos completos
+            actualizarBotonesActa(); // re-evaluar botones con datos completos
+            actualizarPanelEstado(); // re-evaluar panel tras resolución async
           })
           .catch(() => {});
       }
@@ -2452,7 +2461,8 @@ function prepararFormulario(fila, filaIdx) {
     // El Doc del registro fotográfico no se guarda en BD (vive en la carpeta de visita)
     ST._docIdRegistroFotos   = null;
     ST._linkDocRegistroFotos = null;
-    ST._actaGenerada = !!(ST._linkSheetActa || ST._linkPdfActa);
+    ST._actaGenerada    = !!(ST._linkSheetActa || ST._linkPdfActa);
+    ST._informeGenerado = !!(fila['LINK_PDF_INFORME'] || fila['LINK_DOCX_INFORME']);
     actualizarBotonesActa();
     // Cambiar botón a "Actualizar registro" en modo INICIADO
     const btnG = document.querySelector('[onclick="guardarRegistro()"]');
@@ -2547,6 +2557,15 @@ function prepararFormulario(fila, filaIdx) {
       }
       // Mostrar mapa con pin (arrastrable solo si no está completado)
       setTimeout(() => mostrarMapaGPS(ST.gpsLat, ST.gpsLon, !esCompletado), 200);
+    } else {
+      // Sin coordenadas previas — si está COMPLETADO, ocultar caja y botón GPS igual
+      const estSinCoords = (fila['ESTADO VISITA'] || fila[13] || '').toUpperCase();
+      if (estSinCoords === 'COMPLETADO' || estSinCoords === 'COMPLETADA') {
+        const gpsBoxSC = document.getElementById('gps-box');
+        const btnGpsSC = document.querySelector('[onclick="obtenerGPS()"]');
+        if (gpsBoxSC) gpsBoxSC.style.display = 'none';
+        if (btnGpsSC) btnGpsSC.style.display = 'none';
+      }
     }
 
     // Persona que atiende [7]=H:NOMBRE [8]=I:ID [9]=J:TEL [10]=K:RELACION [11]=L:DIR [12]=M:EMAIL
@@ -3126,6 +3145,8 @@ function mostrarMapaGPS(lat, lng, draggable) {
           notif('📌 Coordenadas actualizadas — consultando norma POT', 'exito');
           // Re-consultar norma POT con el nuevo punto
           consultarNormaPOT(pos.lat, pos.lng);
+          // Persistir coordenadas ajustadas en BD si hay fila en edición
+          if (ST.filaEditando) actualizarCoordenadasEnBD(pos.lat, pos.lng);
         });
       }
       // Forzar redibujado (necesario si el contenedor estaba oculto)
@@ -3151,6 +3172,28 @@ function mostrarMapaGPS(lat, lng, draggable) {
       ST._leafletMarker.dragging.disable();
     }
     setTimeout(() => ST._leafletMap.invalidateSize(), 350);
+  }
+}
+
+// Guarda coordenadas ajustadas en BD sin reescribir toda la fila
+async function actualizarCoordenadasEnBD(lat, lon) {
+  if (!ST.filaEditando) return;
+  try {
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      body: JSON.stringify({
+        accion: 'actualizarCoordenadas',
+        fila: ST.filaEditando,
+        lat: lat.toFixed(6),
+        lon: lon.toFixed(6),
+        mapa: `https://maps.google.com/?q=${lat.toFixed(6)},${lon.toFixed(6)}`
+      })
+    });
+    if (r.ok) {
+      document.getElementById('gps-dir').textContent = 'Coordenadas guardadas en BD ✓';
+    }
+  } catch(e) {
+    console.warn('[GPS] No se pudo guardar coordenadas en BD:', e);
   }
 }
 
@@ -4032,6 +4075,8 @@ function toggleCitacion(check) {
 
 // Almacén temporal de archivos seleccionados (permite eliminar antes de subir)
 window._fotosSeleccionadas = [];
+// Sugerencias IA paralelas al arreglo anterior: 'pending' | string | null
+window._sugerenciasIA = [];
 
 function previsualizarFotos(input) {
   if (!input.files.length) return;
@@ -4148,12 +4193,8 @@ async function subirFotos() {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || 'Error en Drive');
 
-      // 3. Descripción Gemini Vision desde el browser (no bloquea el upload)
-      document.getElementById('prog-texto').textContent = `Analizando foto ${subidas + 1}...`;
-      const descripcion = await describirFotoEnNavegador(base64, file.type);
-
       subidas++;
-      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion });
+      ST._fotosParaActa.push({ fileId: d.fileId || '', link: d.link || '', descripcion: '' });
 
     } catch(e) {
       errores++;
@@ -4220,65 +4261,181 @@ async function insertarFotosEnActa() {
   }
 }
 
-// Panel de revisión de fotos exclusivo para el Registro Fotográfico
+// ── Modal de revisión del Registro Fotográfico ────────────────────────────────
+// Muestra todas las fotos de Drive, permite reordenar (↑↓), eliminar del acta
+// (sin borrar en Drive) y lanzar análisis IA solo sobre las fotos restantes.
+
 function mostrarPanelRF(fotos) {
+  // Orden sugerido: cronológico por nombre (cámaras usan timestamp en filename)
+  window._fotosRevisionRF = [...fotos].sort((a, b) =>
+    (a.nombre || '').localeCompare(b.nombre || ''));
+
+  document.getElementById('modal-rf-fotos')?.remove();
   const modal = document.createElement('div');
   modal.id = 'modal-rf-fotos';
-  modal.style.cssText = `
-    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999;
-    display:flex; align-items:flex-start; justify-content:center;
-    padding:16px; overflow-y:auto;
-  `;
-  const contenido = document.createElement('div');
-  contenido.style.cssText = `
-    background:white; border-radius:12px; padding:20px; width:100%;
-    max-width:600px; margin:auto;
-  `;
-  contenido.innerHTML = `
-    <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
-    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:16px;">
-      Revisa y edita las descripciones generadas por IA antes de insertar en el Doc
-    </div>
-    <div id="grid-rf-revision" style="display:flex; flex-direction:column; gap:12px;"></div>
-    <div style="display:flex; gap:8px; margin-top:16px;">
-      <button onclick="confirmarRFConFotos()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
-        ✅ Confirmar y generar registro
-      </button>
-      <button onclick="document.getElementById('modal-rf-fotos').remove()" style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
-        Cancelar
-      </button>
-    </div>
-  `;
-  modal.appendChild(contenido);
-  document.body.appendChild(modal);
-
-  const grid = document.getElementById('grid-rf-revision');
-  fotos.forEach((foto, i) => {
-    const item = document.createElement('div');
-    item.style.cssText = 'display:flex; gap:12px; align-items:flex-start; border-bottom:1px solid var(--borde); padding-bottom:12px;';
-    item.innerHTML = `
-      <img src="data:${foto.mimeType};base64,${foto.base64}"
-        style="width:80px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;">
-      <div style="flex:1;">
-        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">Foto ${i+1}</div>
-        <input type="text" value="${(foto.descripcion || '').replace(/"/g, '&quot;')}"
-          id="desc-rf-${i}"
-          maxlength="60"
-          placeholder="Descripción (máx. 8 palabras)"
-          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:8px; font-size:13px; box-sizing:border-box;">
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:16px; overflow-y:auto;';
+  modal.innerHTML = `
+    <div style="background:white; border-radius:12px; padding:20px; width:100%; max-width:620px; margin:auto;">
+      <div style="font-weight:700; font-size:15px; color:var(--azul); margin-bottom:4px;">📷 Registro fotográfico</div>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:14px;">
+        Orden sugerido: cronológico por nombre de archivo (fachada → piso 1 → pisos superiores → terraza).
+        Usa ▲▼ para reordenar o ✕ para excluir del acta.
       </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <button id="btn-ia-rf" onclick="analizarFotosEnModal()"
+          style="background:#16a34a; color:white; border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;">
+          🤖 Analizar con IA
+        </button>
+        <span id="estado-ia-rf" style="font-size:12px; color:var(--texto-suave);"></span>
+      </div>
+      <div id="grid-rf-revision" style="display:flex; flex-direction:column; gap:8px;"></div>
+      <div style="display:flex; gap:8px; margin-top:18px;">
+        <button onclick="confirmarRFConFotos()"
+          style="flex:1; background:var(--azul); color:white; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          ✅ Confirmar y generar registro
+        </button>
+        <button onclick="document.getElementById('modal-rf-fotos').remove()"
+          style="flex:0 0 auto; background:var(--gris-bg); border:none; border-radius:8px; padding:12px; font-size:13px; cursor:pointer;">
+          Cancelar
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  renderGridRF();
+}
+
+// Reconstruye el grid desde window._fotosRevisionRF (se llama tras cada cambio)
+function renderGridRF() {
+  const fotos = window._fotosRevisionRF || [];
+  const grid  = document.getElementById('grid-rf-revision');
+  if (!grid) return;
+
+  // Preservar descripciones escritas en los inputs antes de redibujar
+  fotos.forEach(f => {
+    const fid = f.id || f.fileId;
+    const inp = document.getElementById('desc-rf-' + fid);
+    if (inp) f.descripcion = inp.value;
+  });
+
+  grid.innerHTML = '';
+  fotos.forEach((foto, i) => {
+    const fid    = foto.id || foto.fileId || '';
+    const nombre = (foto.nombre || '').replace(/</g, '&lt;');
+    const desc   = (foto.descripcion || '').replace(/"/g, '&quot;');
+    const esFirst = i === 0;
+    const esLast  = i === fotos.length - 1;
+
+    const item = document.createElement('div');
+    item.dataset.fotoid = fid;
+    item.style.cssText  = 'display:flex; gap:8px; align-items:center; border:1px solid var(--borde); border-radius:8px; padding:8px; background:#fff;';
+    item.innerHTML = `
+      <!-- Botones orden -->
+      <div style="display:flex; flex-direction:column; gap:3px; flex-shrink:0;">
+        <button onclick="moverFotoRF('${fid}',-1)" title="Subir"
+          style="background:none; border:1px solid var(--borde); border-radius:4px; width:26px; height:26px; cursor:pointer; font-size:13px; ${esFirst  ? 'opacity:0.25; pointer-events:none;' : ''}">▲</button>
+        <button onclick="moverFotoRF('${fid}', 1)" title="Bajar"
+          style="background:none; border:1px solid var(--borde); border-radius:4px; width:26px; height:26px; cursor:pointer; font-size:13px; ${esLast ? 'opacity:0.25; pointer-events:none;' : ''}">▼</button>
+      </div>
+      <!-- Thumbnail -->
+      <img src="https://drive.google.com/thumbnail?id=${fid}&sz=w200"
+        style="width:70px; height:70px; object-fit:cover; border-radius:6px; flex-shrink:0;"
+        onerror="this.style.opacity='0.3'">
+      <!-- Etiqueta + input descripción -->
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:11px; color:var(--texto-suave); margin-bottom:4px;">
+          Foto ${i + 1}
+          <span style="opacity:0.5; font-size:10px; margin-left:4px;">${nombre.slice(0, 35)}${nombre.length > 35 ? '…' : ''}</span>
+        </div>
+        <input type="text" id="desc-rf-${fid}" value="${desc}" maxlength="80"
+          placeholder="Sin descripción"
+          style="width:100%; border:1px solid var(--borde); border-radius:6px; padding:7px 8px; font-size:13px; box-sizing:border-box;">
+      </div>
+      <!-- Botón eliminar -->
+      <button onclick="eliminarFotoRF('${fid}')" title="Excluir del acta"
+        style="flex-shrink:0; background:none; border:1px solid #fca5a5; border-radius:6px; width:32px; height:32px; font-size:16px; color:#dc2626; cursor:pointer; line-height:1;">✕</button>
     `;
     grid.appendChild(item);
   });
 
-  window._fotosRevisionRF = fotos;
+  // Contador de fotos activas
+  const estadoEl = document.getElementById('estado-ia-rf');
+  if (estadoEl && !estadoEl.textContent.includes('Analizando'))
+    estadoEl.textContent = fotos.length + ' foto' + (fotos.length !== 1 ? 's' : '');
+}
+
+// Excluye una foto del acta (no la borra en Drive)
+function eliminarFotoRF(fotoId) {
+  window._fotosRevisionRF = (window._fotosRevisionRF || [])
+    .filter(f => (f.id || f.fileId) !== fotoId);
+  renderGridRF();
+}
+
+// Desplaza una foto arriba (dir=-1) o abajo (dir=1)
+function moverFotoRF(fotoId, dir) {
+  const arr = window._fotosRevisionRF || [];
+  const idx = arr.findIndex(f => (f.id || f.fileId) === fotoId);
+  if (idx < 0) return;
+  const dest = idx + dir;
+  if (dest < 0 || dest >= arr.length) return;
+  // Preservar texto de inputs antes de reordenar
+  arr.forEach(f => {
+    const inp = document.getElementById('desc-rf-' + (f.id || f.fileId));
+    if (inp) f.descripcion = inp.value;
+  });
+  [arr[idx], arr[dest]] = [arr[dest], arr[idx]];
+  renderGridRF();
+}
+
+// Analiza con IA solo las fotos que quedan en el modal (una a una, sin bloquear UI)
+async function analizarFotosEnModal() {
+  const fotos   = window._fotosRevisionRF || [];
+  if (!fotos.length) return;
+
+  const btnIA    = document.getElementById('btn-ia-rf');
+  const estadoEl = document.getElementById('estado-ia-rf');
+  if (btnIA) { btnIA.disabled = true; btnIA.textContent = '⏳ Analizando...'; }
+
+  for (let i = 0; i < fotos.length; i++) {
+    const foto    = fotos[i];
+    const fotoId  = foto.id || foto.fileId;
+    const inputEl = document.getElementById('desc-rf-' + fotoId);
+    if (!fotoId || !inputEl) continue;
+
+    if (estadoEl) estadoEl.textContent = 'Analizando foto ' + (i + 1) + ' de ' + fotos.length + '…';
+    inputEl.disabled    = true;
+    inputEl.placeholder = '⏳ analizando…';
+
+    try {
+      const url = CFG.webhook + '?accion=describirFotoDesdeId&fileId=' + encodeURIComponent(fotoId);
+      const r   = await fetch(url);
+      const ct  = r.headers.get('content-type') || '';
+      if (!ct.includes('json')) throw new Error('respuesta no-JSON de GAS');
+      const d   = await r.json();
+      console.log('[IA foto ' + (i + 1) + '] desc="' + d.descripcion + '" debug=' + d.debug);
+      const desc = (d.descripcion && d.descripcion !== 'Sin descripción') ? d.descripcion : '';
+      foto.descripcion  = desc;
+      inputEl.value     = desc;
+    } catch(e) {
+      console.error('[IA foto ' + (i + 1) + '] Error:', e.message);
+    } finally {
+      inputEl.disabled    = false;
+      inputEl.placeholder = 'Sin descripción';
+    }
+  }
+
+  if (btnIA)    { btnIA.disabled = false; btnIA.textContent = '🤖 Analizar con IA'; }
+  if (estadoEl)   estadoEl.textContent = '✅ Análisis completo · ' + fotos.length + ' fotos';
 }
 
 function confirmarRFConFotos() {
   const fotos = window._fotosRevisionRF || [];
-  fotos.forEach((foto, i) => {
-    const input = document.getElementById('desc-rf-' + i);
-    foto.descripcionFinal = input ? (input.value.trim() || foto.descripcion) : foto.descripcion;
+  if (!fotos.length) { notif('No hay fotos para el registro', 'aviso'); return; }
+  fotos.forEach(foto => {
+    const fotoId = foto.id || foto.fileId;
+    const input  = document.getElementById('desc-rf-' + fotoId);
+    foto.descripcionFinal = input
+      ? (input.value.trim() || foto.descripcion || 'Sin descripción')
+      : (foto.descripcion  || 'Sin descripción');
   });
   document.getElementById('modal-rf-fotos')?.remove();
   _generarRFDocFinal(fotos);
@@ -4304,7 +4461,7 @@ async function _generarRFDocFinal(fotos) {
         idCarpetaFotos:  ST._idCarpetaFotos  || null,
         fotos: fotos.filter(f => f.id || f.fileId).map(f => ({
           fileId:      f.id || f.fileId,
-          descripcion: f.descripcionFinal || f.descripcion || ''
+          descripcion: f.descripcionFinal || f.descripcion || 'Sin descripción'
         }))
       })
     });
@@ -4411,6 +4568,11 @@ function actualizarPanelEstado() {
     {
       label: 'Acta o Informe',
       ok: !!(ST._actaGenerada || ST._informeGenerado)
+    },
+    {
+      // Solo aplica si hay carpeta de fotos — sin carpeta no es requisito
+      label: 'Registro fotográfico',
+      ok: !ST._idCarpetaFotos || !!(ST._docIdRegistroFotos || ST._linkDocRegistroFotos)
     }
   ];
 
