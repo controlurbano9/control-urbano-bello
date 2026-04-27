@@ -4244,7 +4244,7 @@ async function insertarFotosEnActa() {
     notif('No hay carpeta de fotos asociada a esta visita', 'error'); return;
   }
 
-  showLoading('Cargando fotos desde Drive...', 'Analizando con IA — puede tardar unos segundos');
+  showLoading('Cargando fotos desde Drive...', 'Obteniendo imágenes de la visita');
   try {
     const url = CFG.webhook + '?accion=listarFotosActa&idCarpeta=' + encodeURIComponent(ST._idCarpetaFotos);
     const r = await fetch(url);
@@ -4284,7 +4284,7 @@ function mostrarPanelRF(fotos) {
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
         <button id="btn-ia-rf" onclick="analizarFotosEnModal()"
           style="background:#16a34a; color:white; border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;">
-          🤖 Analizar con IA
+          ✨ Sugerir descripción
         </button>
         <span id="estado-ia-rf" style="font-size:12px; color:var(--texto-suave);"></span>
       </div>
@@ -4423,7 +4423,7 @@ async function analizarFotosEnModal() {
     }
   }
 
-  if (btnIA)    { btnIA.disabled = false; btnIA.textContent = '🤖 Analizar con IA'; }
+  if (btnIA)    { btnIA.disabled = false; btnIA.textContent = '✨ Sugerir descripción'; }
   if (estadoEl)   estadoEl.textContent = '✅ Análisis completo · ' + fotos.length + ' fotos';
 }
 
