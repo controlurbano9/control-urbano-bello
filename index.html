@@ -2617,6 +2617,10 @@ function prepararFormulario(fila, filaIdx) {
 
     // Situación encontrada
     document.getElementById('f-area').value = fila['AREA CONTRAVENCION m2'] || celda(fila, 24);
+    if (document.getElementById('f-area').value === 'NO MEDIBLE') {
+      const cbArea = document.getElementById('area-no-medible');
+      if (cbArea) { cbArea.checked = true; toggleAreaNoMedible(cbArea); }
+    }
     const suspVal = fila['SUSPENSION DE LA OBRA'] || fila[43] || celda(fila, 43) || '';
     if (suspVal) { selRadVal('rg-suspension', suspVal); toggleOrden(suspVal); }
     const ordenGuardado = fila['N ORDEN DE POLICIA'] || fila['N° ORDEN DE POLICIA'] || celda(fila, 44) || '';
@@ -2946,8 +2950,16 @@ async function guardarRegistro() {
           ST._idCarpetaFotos = dCarpeta.idFotos || '';
           ST._idCarpetaVisita = (dCarpeta.linkCarpeta || '').match(/folders\/([a-zA-Z0-9_-]+)/)?.[1] || '';
           ST._linkCarpetaDrive = dCarpeta.linkCarpeta || '';
+        } else {
+          console.error('[crearCarpeta] AS error:', dCarpeta.error);
+          notif('⚠️ No se pudo crear carpeta en Drive: ' + (dCarpeta.error || 'error desconocido'), 'aviso');
         }
-      } catch(eDrive) { /* silencioso — no bloquear el guardado */ }
+      } catch(eDrive) {
+        console.error('[crearCarpeta] fetch error:', eDrive);
+        notif('⚠️ Error de red al crear carpeta Drive — el registro se guardará sin link', 'aviso');
+      }
+    } else if (!comunaVal) {
+      console.warn('[crearCarpeta] comunaVal vacío — no se crea carpeta. comunaPreservada:', comunaPreservada, 'ST._filaPendiente:', ST._filaPendiente, 'ST._comunaOficio:', ST._comunaOficio);
     }
 
     // Reemplazar placeholder LINK_DRIVE (última posición del array = BD)
@@ -3046,7 +3058,7 @@ Genera un informe técnico formal F-GGO-43 con los siguientes datos:
 RADICADO: ${radicado}
 N° LICENCIA: ${document.getElementById('f-licencia').value || 'No se aportó licencia'}
 TIPO DE INFRACCIÓN: ${document.getElementById('f-infraccion').value || 'Por determinar en campo'}
-ÁREA EN CONTRAVENCIÓN: ${document.getElementById('f-area').value || 'Por determinar'} m²
+ÁREA EN CONTRAVENCIÓN: ${document.getElementById('f-area').value === 'NO MEDIBLE' ? 'No se pudo medir' : (document.getElementById('f-area').value || 'Por determinar')} m²
 PRESUNTO INFRACTOR: ${document.getElementById('f-infractor').value || 'Sin identificar'}
 INSPECTOR: ${document.getElementById('f-visitador').value || ST.usuario}
 CARGO: ${ST.cargo}
@@ -4150,6 +4162,20 @@ async function subirFotos() {
   const archivos  = window._fotosSeleccionadas;
   const progreso  = document.getElementById('progreso-fotos');
   const btnSubir  = document.getElementById('btn-subir-fotos');
+
+  // Si la carpeta Fotos aún no se resolvió (async al cargar INICIADO), intentar obtenerla ahora
+  if (!ST._idCarpetaFotos && ST._idCarpetaVisita) {
+    btnSubir.disabled = true;
+    btnSubir.textContent = '⏳ Resolviendo carpeta...';
+    try {
+      const r = await fetch(`${CFG.webhook}?accion=obtenerIdFotos&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`);
+      const d = await r.json();
+      if (d.ok && d.idFotos) ST._idCarpetaFotos = d.idFotos;
+    } catch(e) { /* continúa — fallará abajo si sigue vacío */ }
+    btnSubir.disabled = false;
+    btnSubir.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
+  }
+
   const idCarpeta = ST._idCarpetaFotos;
 
   if (!idCarpeta)      { notif('Guarda el registro primero', 'error'); return; }
@@ -4625,7 +4651,7 @@ function toggleAreaNoMedible(check) {
   const input = document.getElementById('f-area');
   input.disabled = check.checked;
   input.style.background = check.checked ? 'var(--gris-bg)' : '';
-  if (check.checked) input.value = '';
+  input.value = check.checked ? 'NO MEDIBLE' : '';
   input.placeholder = check.checked ? 'No se pudo medir' : '0.00';
 }
 
