@@ -404,6 +404,7 @@
     display: flex; align-items: center; justify-content: center;
   }
   .radicado-check.pendiente { border-color: var(--naranja); background: var(--naranja-bg); }
+  .radicado-check.asignado  { border-color: var(--brand);   background: var(--brand-bg,#e8eaf6); }
   .radicado-check.iniciado  { border-color: var(--azul);    background: var(--azul-bg); }
   .radicado-check.completado{ border-color: var(--verde);   background: var(--verde-bg); }
   .radicado-check.completado::after {
@@ -426,6 +427,7 @@
     letter-spacing: 0.1px;
   }
   .badge-pendiente  { background: var(--naranja-bg); color: var(--naranja); }
+  .badge-asignado   { background: var(--brand-bg,#e8eaf6); color: var(--brand,#3f51b5); }
   .badge-iniciado   { background: var(--azul-bg);    color: var(--azul); }
   .badge-completado { background: var(--verde-bg);   color: var(--verde-dark); }
   .badge-otra       { background: var(--slate-100);  color: var(--slate-600); }
@@ -817,6 +819,66 @@
   .sugerencia-info { flex:1; }
   .sugerencia-rad { font-size:12px; font-weight:700; font-family:monospace; }
   .sugerencia-dir { font-size:12px; color:var(--texto-suave); }
+
+  /* ─── INSPECTOR SELECTOR (agenda) ───────────────────────────── */
+  .inspector-chips { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 4px; }
+  .inspector-chip {
+    padding:5px 12px; border-radius:var(--r-full); font-size:12px; font-weight:600;
+    border:1.5px solid var(--borde-med); background:var(--superficie);
+    color:var(--texto-suave); cursor:pointer; transition:all .15s;
+  }
+  .inspector-chip.sel { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .inspector-chip:hover:not(.sel) { background:var(--slate-100); }
+
+  .agenda-confirmar-bar {
+    display:flex; gap:8px; padding:12px 0 4px; border-top:1px solid var(--borde);
+    margin-top:12px;
+  }
+
+  /* ─── VISITA RECIENTE badge ──────────────────────────────────── */
+  .badge-reciente {
+    font-size:10px; font-weight:600; padding:2px 6px; border-radius:var(--r-full);
+    background:var(--verde-bg); color:var(--verde-dark);
+  }
+
+  /* ─── AGENDA HOY (pantalla-home) ─────────────────────────────── */
+  .agenda-hoy-card {
+    background:var(--superficie); border-radius:var(--r-md);
+    border:1px solid var(--borde); box-shadow:var(--sombra-sm);
+    margin-top:14px; overflow:hidden;
+  }
+  .agenda-hoy-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 14px 10px; border-bottom:1px solid var(--borde);
+  }
+  .agenda-hoy-titulo { font-size:13px; font-weight:700; color:var(--texto); }
+  .agenda-hoy-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 14px; border-bottom:1px solid var(--borde); cursor:pointer;
+    transition:background .15s;
+  }
+  .agenda-hoy-item:last-child { border-bottom:none; }
+  .agenda-hoy-item:hover { background:var(--slate-50); }
+  .agenda-hoy-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    background:var(--brand-accent);
+  }
+  .agenda-hoy-dot.completado { background:var(--verde); }
+  .agenda-hoy-dot.iniciado   { background:var(--naranja); }
+  .agenda-hoy-dir { font-size:13px; font-weight:600; color:var(--texto); }
+  .agenda-hoy-sub { font-size:11px; color:var(--texto-suave); }
+  .agenda-hoy-empty {
+    padding:20px; text-align:center; font-size:13px; color:var(--texto-suave);
+  }
+
+  /* ─── BUSCAR UNIFICADO ────────────────────────────────────────── */
+  .filtro-section-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0 6px; cursor:pointer; user-select:none;
+  }
+  .filtro-section-titulo { font-size:12px; font-weight:700; color:var(--texto-suave); text-transform:uppercase; letter-spacing:.04em; }
+  .filtro-section-chevron { font-size:10px; color:var(--texto-3); transition:transform .2s; }
+  .filtro-section-chevron.abierto { transform:rotate(180deg); }
 </style>
   <!-- Turf.js para consulta espacial POT -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
@@ -875,14 +937,8 @@
     <button class="sidebar-btn activo" id="sd-home" onclick="irA('pantalla-home'); setNav('nav-home'); setSidebarActivo('sd-home')">
       <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg></span> Inicio
     </button>
-    <button class="sidebar-btn" id="sd-buscar" onclick="irA('pantalla-buscar'); setNav('nav-buscar'); setSidebarActivo('sd-buscar')">
-      <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg></span> Buscar
-    </button>
-    <button class="sidebar-btn" id="sd-nueva" onclick="irA('pantalla-nueva-visita'); prepararFormulario(null); setNav('nav-nueva'); setSidebarActivo('sd-nueva')">
-      <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></span> Nueva visita
-    </button>
-    <button class="sidebar-btn" id="sd-registros" onclick="irA('pantalla-visitas'); cargarVisitas(); setNav('nav-visitas'); setSidebarActivo('sd-registros')">
-      <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span> Registros
+    <button class="sidebar-btn" id="sd-buscar" onclick="irA('pantalla-buscar'); cargarVisitas(); setNav('nav-buscar'); setSidebarActivo('sd-buscar')">
+      <span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg></span> Visitas
     </button>
     <button class="sidebar-btn" id="sd-agenda" onclick="irA('pantalla-agenda'); cargarAgenda(); setSidebarActivo('sd-agenda'); setNav('nav-agenda')">
       <span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12V18zm-3-6h.008v.008H9V12zm0 3h.008v.008H9v-.008zm0 3h.008v.008H9V18zm6-6h.008v.008H15V12zm0 3h.008v.008H15v-.008zm0 3h.008v.008H15V18z"/></svg></span> Agenda
@@ -912,66 +968,76 @@
       </div>
       <div class="stat-box">
         <div class="stat-num" id="stat-hoy">—</div>
-        <div class="stat-label">Hoy</div>
+        <div class="stat-label">Asignados hoy</div>
       </div>
     </div>
     <button class="btn-principal verde" onclick="irA('pantalla-nueva-visita'); prepararFormulario(null)">
       ➕ Nueva visita de campo
     </button>
-    <button class="btn-principal secundario" onclick="irA('pantalla-buscar'); document.getElementById('input-radicado').focus()">
-      🔍 Buscar radicado
-    </button>
-    <button class="btn-principal gris" onclick="irA('pantalla-visitas'); cargarVisitas()">
-      📋 Ver todos los registros
-    </button>
+    <!-- Agenda de hoy -->
+    <div id="home-agenda-hoy" class="agenda-hoy-card" style="display:none;">
+      <div class="agenda-hoy-header">
+        <span class="agenda-hoy-titulo">📅 Agenda de hoy</span>
+        <span id="home-agenda-count" style="font-size:11px;color:var(--texto-suave);"></span>
+      </div>
+      <div id="home-agenda-lista"></div>
+    </div>
   </div>
 
   <!-- BUSCAR -->
   <div id="pantalla-buscar" class="pantalla pad-bottom">
-    <div class="card">
-      <div class="card-titulo">Buscar por radicado</div>
-      <div class="input-grupo">
-        <input type="text" id="input-radicado" class="input-campo mono" placeholder="Número de radicado..." oninput="this.value=this.value.toUpperCase()">
+    <div class="card" style="margin-bottom:12px;">
+      <!-- Barra de búsqueda -->
+      <div class="input-grupo" style="margin-bottom:10px;">
+        <input type="text" id="input-radicado" class="input-campo"
+               placeholder="🔍  Radicado, dirección, barrio..."
+               oninput="buscarUnificado(this.value)">
       </div>
-      <button class="btn-principal" onclick="buscarRadicado()" style="margin-bottom:0;">🔍 Buscar</button>
-    </div>
-    <div id="resultados-busqueda"></div>
-  </div>
-
-  <!-- VISITAS -->
-  <div id="pantalla-visitas" class="pantalla pad-bottom">
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="card-titulo" style="margin-bottom:0">Estado</div>
-          <span id="contador-registros" style="font-size:11px;color:var(--texto-suave);background:var(--fondo);border-radius:20px;padding:2px 8px;border:1px solid var(--borde);"></span>
-        </div>
-        <button class="btn-limpiar" id="btn-limpiar-filtros" onclick="limpiarFiltros()">✕ Limpiar</button>
-      </div>
+      <!-- Filtros estado -->
       <div class="filtros-estado" id="chips-filtro">
-        <button class="btn-filtro" data-filtro="PENDIENTE" onclick="toggleFiltroEstado(this,'PENDIENTE')">⏳ Pendientes</button>
-        <button class="btn-filtro" data-filtro="ASIGNADO" onclick="toggleFiltroEstado(this,'ASIGNADO')">👤 Asignados</button>
-        <button class="btn-filtro" data-filtro="INICIADO"  onclick="toggleFiltroEstado(this,'INICIADO')">🔄 Iniciados</button>
+        <button class="btn-filtro" data-filtro="PENDIENTE"  onclick="toggleFiltroEstado(this,'PENDIENTE')">⏳ Pendientes</button>
+        <button class="btn-filtro" data-filtro="ASIGNADO"   onclick="toggleFiltroEstado(this,'ASIGNADO')">👤 Asignados</button>
+        <button class="btn-filtro" data-filtro="INICIADO"   onclick="toggleFiltroEstado(this,'INICIADO')">🔄 Iniciados</button>
         <button class="btn-filtro" data-filtro="COMPLETADO" onclick="toggleFiltroEstado(this,'COMPLETADO')">✅ Completados</button>
       </div>
-      <div class="card-titulo" style="margin-top:10px;margin-bottom:8px;">Comuna</div>
-      <div class="filtros-comunas" id="chips-comunas">
-        <!-- generado dinámicamente por poblarChipsComunas() — incluye Rural -->
-      </div>
-      <!-- Filtro por visitador — solo ADMIN -->
-      <div id="bloque-filtro-visitador" style="display:none;">
-        <div class="card-titulo" style="margin-top:10px;margin-bottom:8px;">Visitador</div>
-        <div class="filtros-estado" id="chips-visitador-filtro">
-          <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'ALEJANDRO HERNANDEZ')">Alejandro</button>
-          <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'MAURICIO HERRERA')">Mauricio</button>
-          <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'DANIEL PEDRAZA')">Daniel</button>
+      <!-- Comunas colapsable -->
+      <div style="margin-top:10px;">
+        <div class="filtro-section-header" onclick="toggleComunasCollapse()">
+          <span class="filtro-section-titulo">🏘 Comuna <span id="comunas-activas-count" style="color:var(--brand-accent);font-size:11px;"></span></span>
+          <span class="filtro-section-chevron" id="comunas-chevron">▼</span>
         </div>
+        <div id="comunas-collapse" style="display:none;">
+          <div class="filtros-comunas" id="chips-comunas"></div>
+        </div>
+      </div>
+      <!-- Visitador — solo ADMIN -->
+      <div id="bloque-filtro-visitador" style="display:none;">
+        <div class="filtro-section-header" onclick="toggleVisitadorCollapse()">
+          <span class="filtro-section-titulo">👤 Visitador</span>
+          <span class="filtro-section-chevron" id="visitador-chevron">▼</span>
+        </div>
+        <div id="visitador-collapse" style="display:none;">
+          <div class="filtros-estado" id="chips-visitador-filtro">
+            <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'ALEJANDRO HERNANDEZ')">Alejandro</button>
+            <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'MAURICIO HERRERA')">Mauricio</button>
+            <button class="btn-filtro" onclick="toggleFiltroVisitador(this,'DANIEL PEDRAZA')">Daniel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Limpiar -->
+      <div style="margin-top:8px;">
+        <button class="btn-limpiar" id="btn-limpiar-filtros" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+        <span id="contador-registros" style="font-size:11px;color:var(--texto-suave);margin-left:8px;"></span>
       </div>
     </div>
     <div id="lista-visitas-contenedor">
       <div class="cargando"><div class="spinner"></div>Cargando...</div>
     </div>
   </div>
+
+  <!-- VISITAS -->
+  <!-- pantalla-visitas fusionada con pantalla-buscar -->
+  <div id="pantalla-visitas" class="pantalla pad-bottom" style="display:none;"></div>
 
   <!-- NUEVA VISITA / FORMULARIO -->
   <div id="pantalla-nueva-visita" class="pantalla pad-bottom">
@@ -1669,14 +1735,12 @@
       <div class="agenda-tabs">
         <button class="agenda-tab activo" id="tab-btn-manana" onclick="agendaTab('manana')">☀️ Mañana</button>
         <button class="agenda-tab"        id="tab-btn-tarde"  onclick="agendaTab('tarde')">🌇 Tarde</button>
-        <button class="agenda-tab"        id="tab-btn-rural"  onclick="agendaTab('rural')">🌄 Rural</button>
       </div>
       <div id="agenda-tab-manana"></div>
-      <div id="agenda-tab-tarde"  style="display:none;"></div>
-      <div id="agenda-tab-rural"  style="display:none;"></div>
-      <div id="agenda-btn-confirmar" style="display:none;margin-top:4px;">
-        <button class="btn-principal verde" onclick="confirmarAgendaManual()">💾 Confirmar agenda</button>
-        <button class="btn-principal gris"  onclick="descartarCambiosAgenda()">↩️ Descartar cambios</button>
+      <div id="agenda-tab-tarde" style="display:none;"></div>
+      <div id="agenda-btn-confirmar" style="display:none;margin-top:4px;display:flex;gap:8px;">
+        <button class="btn-principal verde" style="flex:1;" onclick="confirmarAgendaManual()">💾 Guardar cambios</button>
+        <button class="btn-principal gris"  style="flex:1;" onclick="descartarCambiosAgenda()">↩️ Descartar</button>
       </div>
     </div>
   </div>
@@ -1771,11 +1835,9 @@
 
 <div id="nav-inferior" class="nav-inferior" style="display:none;">
   <button class="nav-btn activo" id="nav-home" onclick="irA('pantalla-home'); setNav('nav-home')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg></span><span>Inicio</span></button>
-  <button class="nav-btn" id="nav-buscar" onclick="irA('pantalla-buscar'); setNav('nav-buscar')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg></span><span>Buscar</span></button>
-  <button class="nav-btn" id="nav-nueva" onclick="irA('pantalla-nueva-visita'); prepararFormulario(null); setNav('nav-nueva')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></span><span>Nueva</span></button>
-  <button class="nav-btn" id="nav-visitas" onclick="irA('pantalla-visitas'); cargarVisitas(); setNav('nav-visitas')"><span class="ico "><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg></span><span>Registros</span></button>
-  <button class="nav-btn" id="nav-agenda" onclick="irA('pantalla-agenda'); cargarAgenda(); setNav('nav-agenda')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12V18zm-3-6h.008v.008H9V12zm0 3h.008v.008H9v-.008zm0 3h.008v.008H9V18zm6-6h.008v.008H15V12zm0 3h.008v.008H15v-.008zm0 3h.008v.008H15V18z"/></svg></span><span>Agenda</span></button>
-  <button class="nav-btn" id="nav-gestion" onclick="irA('pantalla-gestion'); cargarGestion(); setNav('nav-gestion')" style="display:none;"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg></span><span>Gestión</span></button>
+  <button class="nav-btn" id="nav-buscar" onclick="irA('pantalla-buscar'); cargarVisitas(); setNav('nav-buscar')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z"/></svg></span><span>Visitas</span></button>
+  <button class="nav-btn" id="nav-agenda" style="display:none;" onclick="irA('pantalla-agenda'); cargarAgenda(); setNav('nav-agenda')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12V18zm-3-6h.008v.008H9V12zm0 3h.008v.008H9v-.008zm0 3h.008v.008H9V18zm6-6h.008v.008H15V12zm0 3h.008v.008H15v-.008zm0 3h.008v.008H15V18z"/></svg></span><span>Agenda</span></button>
+  <button class="nav-btn" id="nav-gestion" style="display:none;" onclick="irA('pantalla-gestion'); cargarGestion(); setNav('nav-gestion')"><span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg></span><span>Gestión</span></button>
 </div>
 
   </div><!-- /content-desktop -->
@@ -1827,6 +1889,8 @@ let ST = {
   _linkSheetActa: null,
   _actaGenerada: false,
   _informeGenerado: false,
+  _textoBusqueda: '',    // texto libre en pantalla-buscar
+  _inspectorSel: {},     // { manana: 'NOMBRE', tarde: 'NOMBRE' }
 };
 
 let reconVoz = null;
@@ -1926,22 +1990,30 @@ function mostrarApp() {
   document.getElementById('app-principal').style.display = 'block';
   document.getElementById('nav-inferior').style.display = 'flex';
   document.getElementById('usuario-nombre').textContent = ST.usuario + ' · ' + ST.cargo;
-  // Mostrar botón admin en header y pestaña gestión solo si es ADMIN
+
+  const esAdmin = ST.rol === 'ADMIN';
+
+  // Header admin button
   const btnAdminHeader = document.getElementById('btn-admin-header');
-  if (btnAdminHeader) btnAdminHeader.style.display = ST.rol === 'ADMIN' ? 'inline-flex' : 'none';
-  const btnGestion = document.getElementById('nav-gestion');
-  if (btnGestion) btnGestion.style.display = ST.rol === 'ADMIN' ? 'flex' : 'none';
-  const sdGestion = document.getElementById('sd-gestion');
-  if (sdGestion) sdGestion.style.display = ST.rol === 'ADMIN' ? 'flex' : 'none';
-  const sdAdmin = document.getElementById('sd-admin');
-  if (sdAdmin) sdAdmin.style.display = ST.rol === 'ADMIN' ? 'flex' : 'none';
-  // Mostrar filtro visitador solo para ADMIN
-  const bloqueVisitador = document.getElementById('bloque-filtro-visitador');
-  if (bloqueVisitador) bloqueVisitador.style.display = ST.rol === 'ADMIN' ? 'block' : 'none';
-  // Adaptar layout desktop
+  if (btnAdminHeader) btnAdminHeader.style.display = esAdmin ? 'inline-flex' : 'none';
+
+  // Nav items — agenda, gestión y admin solo para ADMIN
+  const show = (id, cond, tipo = 'flex') => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = cond ? tipo : 'none';
+  };
+  show('nav-agenda',  esAdmin);
+  show('nav-gestion', esAdmin);
+  show('sd-agenda',   esAdmin, 'flex');
+  show('sd-gestion',  esAdmin, 'flex');
+  show('sd-admin',    esAdmin, 'flex');
+
+  // Filtro visitador solo ADMIN
+  show('bloque-filtro-visitador', esAdmin, 'block');
+
   adaptarDesktop();
   cargarStats();
-  // Iniciar verificación de sesión cada minuto
+
   if (window._sesionTimer) clearInterval(window._sesionTimer);
   window._sesionTimer = setInterval(verificarSesion, 60000);
 }
@@ -2057,8 +2129,13 @@ async function cargarStats() {
     }).length;
     document.getElementById('stat-pendientes').textContent = pendientes;
     const hoy = new Date().toISOString().split('T')[0];
-    const hoyCount = misDatos.filter(f => (f['FECHA DE VISITA']||f[15]||'').startsWith(hoy)).length;
+    const hoyCount = misDatos.filter(f => {
+      const est = normalizarEstado(f['ESTADO VISITA']||f[13]||'');
+      const fAsig = (f['FECHA ASIGNACION VISITA'] || '').toString().trim();
+      return est === 'ASIGNADO' && fAsig.startsWith(hoy);
+    }).length;
     document.getElementById('stat-hoy').textContent = hoyCount;
+    _cargarAgendaHoy(misDatos);
   } catch(e) {
     console.warn('Stats:', e.message);
   }
@@ -2140,6 +2217,7 @@ async function cargarVisitas() {
 function normalizarEstado(raw) {
   const r = (raw || '').toUpperCase().trim();
   if (r.includes('PENDIENTE')) return 'PENDIENTE';
+  if (r === 'ASIGNADO') return 'ASIGNADO';
   if (r === 'INICIADO' || r === 'REALIZADA' || r === 'REPETIR') return 'INICIADO';
   if (r === 'COMPLETADO' || r === 'COMPLETADA') return 'COMPLETADO';
   return r;
@@ -2188,7 +2266,7 @@ function toggleFiltroEstado(btn, estado) {
   const idx = ST.filtrosEstado.indexOf(estado);
   if (idx === -1) {
     ST.filtrosEstado.push(estado);
-    const claseMap = { 'PENDIENTE': 'activo-pendiente', 'INICIADO': 'activo-iniciado', 'COMPLETADO': 'activo-completado' };
+    const claseMap = { 'PENDIENTE': 'activo-pendiente', 'ASIGNADO': 'activo-iniciado', 'INICIADO': 'activo-iniciado', 'COMPLETADO': 'activo-completado' };
     btn.classList.add(claseMap[estado] || 'activo-pendiente');
   } else {
     ST.filtrosEstado.splice(idx, 1);
@@ -2237,10 +2315,13 @@ function toggleFiltroRural(btn) {
 
 // ── Limpiar todos los filtros ─────────────────────────────────────────────
 function limpiarFiltros() {
-  ST.filtrosEstado = [];
-  ST.filtroComunas = [];
+  ST.filtrosEstado    = [];
+  ST.filtroComunas    = [];
   ST.filtrosVisitador = [];
-  ST._filtroRural = false;
+  ST._filtroRural     = false;
+  ST._textoBusqueda   = '';
+  const inputBusq = document.getElementById('input-radicado');
+  if (inputBusq) inputBusq.value = '';
   document.querySelectorAll('#chips-filtro .btn-filtro').forEach(b => {
     b.classList.remove('activo-pendiente', 'activo-iniciado', 'activo-completado');
   });
@@ -2251,10 +2332,10 @@ function limpiarFiltros() {
     b.classList.remove('activo-iniciado');
   });
   const btnLimpiar = document.getElementById('btn-limpiar-filtros');
-  if (btnLimpiar) {
-    btnLimpiar.classList.remove('visible');
-  }
-  aplicarFiltros();
+  if (btnLimpiar) btnLimpiar.classList.remove('visible');
+  const contCom = document.getElementById('comunas-activas-count');
+  if (contCom) contCom.textContent = '';
+  _aplicarFiltrosCombinados();
 }
 
 // ── Poblar chips de comunas dinámicamente ────────────────────────────────
@@ -2286,8 +2367,9 @@ function renderLista(items) {
   const contador = document.getElementById('contador-registros');
   if (contador) {
     const total = ST.datos ? ST.datos.length : 0;
-    const tienesFiltros = ST.filtrosEstado.length > 0 || ST.filtroComunas.length > 0 || (ST.filtrosVisitador && ST.filtrosVisitador.length > 0);
-    contador.textContent = tienesFiltros ? `${items.length} filtrados` : `${total} registros`;
+    const tienesFiltros = ST.filtrosEstado.length > 0 || ST.filtroComunas.length > 0 ||
+      (ST.filtrosVisitador && ST.filtrosVisitador.length > 0) || !!(ST._textoBusqueda);
+    contador.textContent = tienesFiltros ? `${items.length} de ${total}` : `${total} registros`;
     contador.style.display = total > 0 ? '' : 'none';
   }
   if (!items.length) {
@@ -2321,8 +2403,9 @@ function tarjetaRadicado(radicado, visitas) {
   const estadoUlt = ultima['ESTADO VISITA'] || ultima[13] || '';
   const dir = ultima['DIRECCION INFRACCION'] || ultima[3] || 'Sin dirección';
   const estNorm = normalizarEstado(estadoUlt);
-  const bc = estNorm === 'PENDIENTE' ? 'badge-pendiente' :
-             estNorm === 'INICIADO'  ? 'badge-iniciado' :
+  const bc = estNorm === 'PENDIENTE'  ? 'badge-pendiente' :
+             estNorm === 'ASIGNADO'   ? 'badge-asignado' :
+             estNorm === 'INICIADO'   ? 'badge-iniciado' :
              estNorm === 'COMPLETADO' ? 'badge-completado' : 'badge-otra';
   div.innerHTML = `
     <div class="radicado-header" onclick="toggleVisitas(this)">
@@ -2344,8 +2427,9 @@ function tarjetaRadicado(radicado, visitas) {
         const fv = f['FECHA DE VISITA'] || f[15] || 'Sin fecha';
         const vis = f['VISITADOR(ES)'] || f[17] || 'Sin asignar';
         const estN = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
-        const bc2 = estN === 'PENDIENTE' ? 'badge-pendiente' :
-                    estN === 'INICIADO'  ? 'badge-iniciado' :
+        const bc2 = estN === 'PENDIENTE'  ? 'badge-pendiente' :
+                    estN === 'ASIGNADO'   ? 'badge-asignado' :
+                    estN === 'INICIADO'   ? 'badge-iniciado' :
                     estN === 'COMPLETADO' ? 'badge-completado' : 'badge-otra';
         if (estN === 'PENDIENTE') return ''; // PENDIENTE no muestra fila de visita
         return `
@@ -2361,6 +2445,10 @@ function tarjetaRadicado(radicado, visitas) {
         ${estNorm === 'PENDIENTE' ? `
           <button class="btn-sm azul" onclick="abrirVisitaPorIdx(${visitas[visitas.length-1].i})">
             📋 Realizar visita
+          </button>` : ''}
+        ${estNorm === 'ASIGNADO' ? `
+          <button class="btn-sm azul" onclick="abrirVisitaPorIdx(${visitas[visitas.length-1].i})">
+            🗓 Iniciar visita asignada
           </button>` : ''}
         ${estNorm === 'INICIADO' ? `
           <button class="btn-sm azul" onclick="abrirVisitaPorIdx(${visitas[visitas.length-1].i})">
@@ -2744,6 +2832,10 @@ function prepararFormulario(fila, filaIdx) {
 
     // Situación encontrada
     document.getElementById('f-area').value = fila['AREA CONTRAVENCION m2'] || celda(fila, 24);
+    if (document.getElementById('f-area').value === 'NO MEDIBLE') {
+      const cbArea = document.getElementById('area-no-medible');
+      if (cbArea) { cbArea.checked = true; toggleAreaNoMedible(cbArea); }
+    }
     const suspVal = fila['SUSPENSION DE LA OBRA'] || fila[43] || celda(fila, 43) || '';
     if (suspVal) { selRadVal('rg-suspension', suspVal); toggleOrden(suspVal); }
     const ordenGuardado = fila['N ORDEN DE POLICIA'] || fila['N° ORDEN DE POLICIA'] || celda(fila, 44) || '';
@@ -3073,8 +3165,16 @@ async function guardarRegistro() {
           ST._idCarpetaFotos = dCarpeta.idFotos || '';
           ST._idCarpetaVisita = (dCarpeta.linkCarpeta || '').match(/folders\/([a-zA-Z0-9_-]+)/)?.[1] || '';
           ST._linkCarpetaDrive = dCarpeta.linkCarpeta || '';
+        } else {
+          console.error('[crearCarpeta] AS error:', dCarpeta.error);
+          notif('⚠️ No se pudo crear carpeta en Drive: ' + (dCarpeta.error || 'error desconocido'), 'aviso');
         }
-      } catch(eDrive) { /* silencioso — no bloquear el guardado */ }
+      } catch(eDrive) {
+        console.error('[crearCarpeta] fetch error:', eDrive);
+        notif('⚠️ Error de red al crear carpeta Drive — el registro se guardará sin link', 'aviso');
+      }
+    } else if (!comunaVal) {
+      console.warn('[crearCarpeta] comunaVal vacío — no se crea carpeta. comunaPreservada:', comunaPreservada, 'ST._filaPendiente:', ST._filaPendiente, 'ST._comunaOficio:', ST._comunaOficio);
     }
 
     // Reemplazar placeholder LINK_DRIVE (última posición del array = BD)
@@ -3173,7 +3273,7 @@ Genera un informe técnico formal F-GGO-43 con los siguientes datos:
 RADICADO: ${radicado}
 N° LICENCIA: ${document.getElementById('f-licencia').value || 'No se aportó licencia'}
 TIPO DE INFRACCIÓN: ${document.getElementById('f-infraccion').value || 'Por determinar en campo'}
-ÁREA EN CONTRAVENCIÓN: ${document.getElementById('f-area').value || 'Por determinar'} m²
+ÁREA EN CONTRAVENCIÓN: ${document.getElementById('f-area').value === 'NO MEDIBLE' ? 'No se pudo medir' : (document.getElementById('f-area').value || 'Por determinar')} m²
 PRESUNTO INFRACTOR: ${document.getElementById('f-infractor').value || 'Sin identificar'}
 INSPECTOR: ${document.getElementById('f-visitador').value || ST.usuario}
 CARGO: ${ST.cargo}
@@ -4277,6 +4377,20 @@ async function subirFotos() {
   const archivos  = window._fotosSeleccionadas;
   const progreso  = document.getElementById('progreso-fotos');
   const btnSubir  = document.getElementById('btn-subir-fotos');
+
+  // Si la carpeta Fotos aún no se resolvió (async al cargar INICIADO), intentar obtenerla ahora
+  if (!ST._idCarpetaFotos && ST._idCarpetaVisita) {
+    btnSubir.disabled = true;
+    btnSubir.textContent = '⏳ Resolviendo carpeta...';
+    try {
+      const r = await fetch(`${CFG.webhook}?accion=obtenerIdFotos&idCarpeta=${encodeURIComponent(ST._idCarpetaVisita)}`);
+      const d = await r.json();
+      if (d.ok && d.idFotos) ST._idCarpetaFotos = d.idFotos;
+    } catch(e) { /* continúa — fallará abajo si sigue vacío */ }
+    btnSubir.disabled = false;
+    btnSubir.innerHTML = '<span class="ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></span> Subir fotos a Drive';
+  }
+
   const idCarpeta = ST._idCarpetaFotos;
 
   if (!idCarpeta)      { notif('Guarda el registro primero', 'error'); return; }
@@ -4752,7 +4866,7 @@ function toggleAreaNoMedible(check) {
   const input = document.getElementById('f-area');
   input.disabled = check.checked;
   input.style.background = check.checked ? 'var(--gris-bg)' : '';
-  if (check.checked) input.value = '';
+  input.value = check.checked ? 'NO MEDIBLE' : '';
   input.placeholder = check.checked ? 'No se pudo medir' : '0.00';
 }
 
@@ -6272,7 +6386,7 @@ function renderGestionCard(f) {
   // Badge de estado
   const badgeMap = {
     'PENDIENTE': '<span class="badge badge-pendiente">Pendiente</span>',
-    'ASIGNADO': '<span class="badge badge-otra">Asignado</span>',
+    'ASIGNADO': '<span class="badge badge-asignado">Asignado</span>',
     'INICIADO': '<span class="badge badge-iniciado">Iniciado</span>',
     'COMPLETADO': '<span class="badge badge-completado">Completado</span>'
   };
@@ -6535,10 +6649,12 @@ function renderAgenda() {
   _renderAlertasStrip(d.alertas);
   _renderTab('manana', d.jornadas.manana);
   _renderTab('tarde',  d.jornadas.tarde);
-  _renderTab('rural',  d.jornadas.rural);
 
-  document.getElementById('agenda-btn-confirmar').style.display =
-    (ST.rol === 'ADMIN' && ST.agendaCambiada) ? 'block' : 'none';
+  // Mostrar barra de guardar/descartar solo cuando hay cambios estructurales (admin)
+  const btnConf = document.getElementById('agenda-btn-confirmar');
+  if (btnConf) {
+    btnConf.style.display = (ST.rol === 'ADMIN' && ST.agendaCambiada) ? 'flex' : 'none';
+  }
 }
 
 function _renderAlertasStrip(alertas) {
@@ -6559,14 +6675,14 @@ function _renderAlertasStrip(alertas) {
 
 function _renderTab(cual, jornada) {
   const cont = document.getElementById(`agenda-tab-${cual}`);
-  if (!jornada) { cont.innerHTML = ''; return; }
+  if (!cont || !jornada) { if(cont) cont.innerHTML = ''; return; }
   const esAdmin = ST.rol === 'ADMIN';
-  const { activa, visitas } = jornada;
+  const { activa, visitas, esRural } = jornada;
   let html = '';
 
   if (!activa) {
-    const msg = { manana:'Sin jornada mañana (miércoles)', tarde:'Sin jornada tarde (viernes)', rural:'Solo primer viernes del mes' };
-    html = `<div class="agenda-strip suspendida"><span>⏸</span> ${msg[cual]}</div>`;
+    const msg = { manana:'Sin jornada mañana (miércoles)', tarde:'Sin jornada tarde (viernes)' };
+    html = `<div class="agenda-strip suspendida"><span>⏸</span> ${msg[cual] || 'Jornada suspendida'}</div>`;
   } else if (!visitas || visitas.length === 0) {
     html = `<div class="agenda-empty">
       <div style="font-size:28px;margin-bottom:8px;">📭</div>
@@ -6574,17 +6690,37 @@ function _renderTab(cual, jornada) {
       <div style="font-size:12px;margin-top:4px;">No hay radicados para esta jornada</div>
     </div>`;
   } else {
-    const info = { manana:'Comunas 1,4,6,7,10,11', tarde:'Comunas 2,3,5,8,9 (prioritarias)', rural:'Zona Rural' };
-    html += `<div class="agenda-seccion-info">📍 ${info[cual]} · ${visitas.length} visita${visitas.length>1?'s':''} sugerida${visitas.length>1?'s':''}</div>`;
+    if (esRural) html += `<div class="agenda-strip" style="background:var(--verde-bg,#e8f5e9);color:var(--verde,#2e7d32);font-size:12px;">🌄 Primer viernes del mes — jornada rural incluida</div>`;
     visitas.forEach((v, i) => { html += _tarjetaVisita(v, i+1, cual, esAdmin); });
   }
 
   if (esAdmin && activa) {
-    const max = cual === 'rural' ? 4 : 3;
-    if (!visitas || visitas.length < max) {
-      html += `<button class="btn-principal secundario" style="margin-top:4px;" onclick="abrirModalAgregarVisita('${cual}')">+ Agregar visita</button>`;
-    }
+    html += `<button class="btn-principal secundario" style="margin-top:4px;" onclick="abrirModalAgregarVisita('${cual}')">+ Agregar visita</button>`;
   }
+
+  // Selector de inspector + botón confirmar (solo ADMIN)
+  if (esAdmin) {
+    const inspectores = [
+      'ALEJANDRO HERNANDEZ MUÑOZ','MAURICIO HERRERA LOPERA','DIEGO ALEJANDRO MUNERA OSSA',
+      'DANIEL PEDRAZA ARANGO','VICTOR HUGO QUIROZ PORTILLA','CARLOS ANDRES MEJIA','JUAN SEBASTIAN PINZON GAONA'
+    ];
+    const etiquetas = {
+      'ALEJANDRO HERNANDEZ MUÑOZ':'Alejandro','MAURICIO HERRERA LOPERA':'Mauricio',
+      'DIEGO ALEJANDRO MUNERA OSSA':'Diego','DANIEL PEDRAZA ARANGO':'Daniel',
+      'VICTOR HUGO QUIROZ PORTILLA':'Víctor','CARLOS ANDRES MEJIA':'Carlos',
+      'JUAN SEBASTIAN PINZON GAONA':'Juan S.'
+    };
+    const chips = inspectores.map(n =>
+      `<div class="inspector-chip" data-jornada="${cual}" data-nombre="${n}"
+        onclick="seleccionarInspector('${cual}','${n}',this)">${etiquetas[n]||n}</div>`
+    ).join('');
+    html += `<div style="margin-top:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--texto-suave);margin-bottom:6px;">ASIGNAR A INSPECTOR</div>
+      <div class="inspector-chips" id="inspector-chips-${cual}">${chips}</div>
+      <button class="btn-principal verde" style="margin-top:8px;width:100%;" onclick="confirmarJornada('${cual}')">✓ Confirmar jornada ${cual==='manana'?'mañana':'tarde'}</button>
+    </div>`;
+  }
+
   cont.innerHTML = html;
 }
 
@@ -6621,8 +6757,9 @@ function agendaTab(cual) {
   ST.agendaTab = cual;
   document.querySelectorAll('.agenda-tab').forEach(b => b.classList.remove('activo'));
   document.getElementById(`tab-btn-${cual}`)?.classList.add('activo');
-  ['manana','tarde','rural'].forEach(t => {
-    document.getElementById(`agenda-tab-${t}`).style.display = t === cual ? 'block' : 'none';
+  ['manana','tarde'].forEach(t => {
+    const el = document.getElementById(`agenda-tab-${t}`);
+    if (el) el.style.display = t === cual ? 'block' : 'none';
   });
 }
 
@@ -6642,8 +6779,7 @@ function abrirModalAgregarVisita(jornada) {
   const labels = { manana:'Mañana ☀️', tarde:'Tarde 🌇', rural:'Rural 🌄' };
   document.getElementById('modal-agregar-jornada').textContent = labels[jornada] || jornada;
 
-  const comunas = jornada === 'rural' ? ['RURAL']
-    : jornada === 'manana' ? [1,4,6,7,10,11] : [2,3,5,8,9];
+  const comunas = jornada === 'manana' ? [1,4,6,7,10,11] : [2,3,5,8,9];
 
   const enAgenda = new Set();
   Object.values(ST.agendaMod.jornadas).forEach(j => (j.visitas||[]).forEach(v => enAgenda.add(String(v.radicado))));
@@ -6652,7 +6788,6 @@ function abrirModalAgregarVisita(jornada) {
     ...(ST.agendaData.jornadas[jornada]?.visitas||[])]
     .filter(v => {
       if (enAgenda.has(String(v.radicado))) return false;
-      if (jornada === 'rural') return v.comuna === 'RURAL';
       return comunas.includes(parseInt(v.comuna));
     });
 
@@ -6708,8 +6843,7 @@ async function confirmarAgendaManual() {
         fecha:  ST.agendaMod.fecha,
         agenda: {
           manana: ST.agendaMod.jornadas.manana.visitas || [],
-          tarde:  ST.agendaMod.jornadas.tarde.visitas  || [],
-          rural:  ST.agendaMod.jornadas.rural.visitas  || []
+          tarde:  ST.agendaMod.jornadas.tarde.visitas  || []
         }
       })
     });
@@ -6732,6 +6866,209 @@ function descartarCambiosAgenda() {
   ST.agendaCambiada = false;
   renderAgenda();
   agendaTab(ST.agendaTab);
+}
+
+// ═══════════════════════════════════════════
+// BÚSQUEDA UNIFICADA
+// ═══════════════════════════════════════════
+function buscarUnificado(texto) {
+  ST._textoBusqueda = (texto || '').trim().toUpperCase();
+  _aplicarFiltrosCombinados();
+}
+
+// Wrapper que combina texto + filtros existentes
+function _aplicarFiltrosCombinados() {
+  const q          = ST._textoBusqueda || '';
+  const tieneTexto = q.length > 0;
+  const tieneEstado    = ST.filtrosEstado.length > 0;
+  const tieneComuna    = ST.filtroComunas.length > 0;
+  const tieneVisitador = (ST.filtrosVisitador||[]).length > 0;
+  const tieneRural     = !!ST._filtroRural;
+
+  const filtrados = ST.datos
+    .map(f => ({ f, i: f._idx }))
+    .filter(({ f }) => {
+      // Filtro de texto libre
+      if (tieneTexto) {
+        const rad  = (f['RADICADO']     || f[1] || '').toString().toUpperCase();
+        const dir  = (f['DIRECCION']    || f[3] || '').toString().toUpperCase();
+        const bar  = (f['BARRIO/VEREDA']|| f[4] || '').toString().toUpperCase();
+        const aten = (f['ATENCION PQR'] || f[0] || '').toString().toUpperCase();
+        if (!rad.includes(q) && !dir.includes(q) && !bar.includes(q) && !aten.includes(q)) return false;
+      }
+      // Filtros de estado
+      if (tieneEstado) {
+        const estNorm = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+        if (!ST.filtrosEstado.includes(estNorm)) return false;
+      }
+      // Filtros de comuna
+      if (tieneComuna) {
+        const com = (f['COMUNA'] || f[5] || '').toString().trim();
+        if (!ST.filtroComunas.includes(com)) return false;
+      }
+      // Filtro de visitador
+      if (tieneVisitador) {
+        const vis = (f['VISITADOR(ES)'] || f[17] || '').toString().toUpperCase();
+        if (!ST.filtrosVisitador.some(v => vis.includes(v))) return false;
+      }
+      // Filtro rural
+      if (tieneRural) {
+        const barrio = (f['BARRIO/VEREDA'] || f[4] || '').toString().trim();
+        if (!barrio.startsWith('Vda.')) return false;
+      }
+      return true;
+    });
+
+  const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+  if (btnLimpiar) {
+    btnLimpiar.classList.toggle('visible',
+      tieneTexto || tieneEstado || tieneComuna || tieneVisitador || tieneRural);
+  }
+  // Actualizar contador de comunas activas
+  const contCom = document.getElementById('comunas-activas-count');
+  if (contCom) contCom.textContent = tieneComuna ? `(${ST.filtroComunas.length})` : '';
+
+  renderLista(filtrados);
+}
+
+// ── Sobrescribir aplicarFiltros para pasar por el combinado ─────────────────
+function aplicarFiltros() { _aplicarFiltrosCombinados(); }
+
+// ═══════════════════════════════════════════
+// COLAPSO DE FILTROS
+// ═══════════════════════════════════════════
+function toggleComunasCollapse() {
+  const panel   = document.getElementById('comunas-collapse');
+  const chevron = document.getElementById('comunas-chevron');
+  if (!panel) return;
+  const abierto = panel.style.display !== 'none';
+  panel.style.display   = abierto ? 'none' : 'block';
+  if (chevron) chevron.style.transform = abierto ? '' : 'rotate(180deg)';
+}
+
+function toggleVisitadorCollapse() {
+  const panel   = document.getElementById('visitador-collapse');
+  const chevron = document.getElementById('visitador-chevron');
+  if (!panel) return;
+  const abierto = panel.style.display !== 'none';
+  panel.style.display   = abierto ? 'none' : 'block';
+  if (chevron) chevron.style.transform = abierto ? '' : 'rotate(180deg)';
+}
+
+// ═══════════════════════════════════════════
+// AGENDA DE HOY (HOME)
+// ═══════════════════════════════════════════
+function _cargarAgendaHoy(datos) {
+  const card = document.getElementById('home-agenda-hoy');
+  const lista = document.getElementById('home-agenda-lista');
+  const count = document.getElementById('home-agenda-count');
+  if (!card || !lista) return;
+
+  const hoy = new Date().toISOString().split('T')[0];
+  const asignados = (datos || ST.datos).filter(f => {
+    const est   = normalizarEstado(f['ESTADO VISITA'] || f[13] || '');
+    const fAsig = (f['FECHA ASIGNACION VISITA'] || '').toString().trim();
+    // Inspector solo ve los suyos; ADMIN ve todos
+    if (ST.rol !== 'ADMIN') {
+      const vis  = (f['VISITADOR(ES)'] || f[17] || '').toUpperCase();
+      const user = (ST.usuario || '').toUpperCase();
+      if (!vis.includes(user)) return false;
+    }
+    return est === 'ASIGNADO' && fAsig.startsWith(hoy);
+  });
+
+  if (asignados.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  if (count) count.textContent = `${asignados.length} visita${asignados.length > 1 ? 's' : ''}`;
+
+  lista.innerHTML = asignados.map(f => {
+    const rad = (f['RADICADO']     || f[1] || '—').toString().trim();
+    const dir = (f['DIRECCION']    || f[3] || '—').toString().trim();
+    const bar = (f['BARRIO/VEREDA']|| f[4] || '').toString().trim();
+    const com = (f['COMUNA']       || f[5] || '').toString().trim();
+    return `<div class="agenda-hoy-item" onclick="abrirRegistro(${f._idx})">
+      <span class="agenda-hoy-dot"></span>
+      <div style="flex:1;min-width:0;">
+        <div class="agenda-hoy-dir">${dir}</div>
+        <div class="agenda-hoy-sub">
+          <span style="font-family:monospace;font-size:10px;">${rad}</span>
+          ${com ? `<span class="comuna-chip" style="font-size:10px;padding:1px 5px;">C${com}</span>` : ''}
+          ${bar ? `<span style="color:var(--texto-suave);">${bar}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// SELECTOR DE INSPECTOR (AGENDA)
+// ═══════════════════════════════════════════
+function seleccionarInspector(jornada, nombre, btn) {
+  if (ST.rol !== 'ADMIN') return;
+  // Inicializar mapa de inspectores seleccionados si no existe
+  if (!ST._inspectorSel) ST._inspectorSel = {};
+
+  const yaSeleccionado = ST._inspectorSel[jornada] === nombre;
+  ST._inspectorSel[jornada] = yaSeleccionado ? null : nombre;
+
+  // Actualizar chips visualmente
+  const cont = document.getElementById(`inspector-chips-${jornada}`);
+  if (cont) {
+    cont.querySelectorAll('.inspector-chip').forEach(c => c.classList.remove('sel'));
+    if (!yaSeleccionado) btn.classList.add('sel');
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFIRMAR JORNADA
+// ═══════════════════════════════════════════
+async function confirmarJornada(jornada) {
+  if (ST.rol !== 'ADMIN') return;
+  const inspector = ST._inspectorSel?.[jornada];
+  if (!inspector) {
+    notif('Selecciona un inspector para esta jornada', 'error');
+    return;
+  }
+  const visitas = ST.agendaMod?.jornadas?.[jornada]?.visitas || [];
+  if (visitas.length === 0) {
+    notif('No hay visitas en esta jornada', 'error');
+    return;
+  }
+
+  const btnEl = document.querySelector(`#agenda-tab-${jornada} .btn-principal.verde`);
+  const orig  = btnEl ? btnEl.textContent : '';
+  if (btnEl) { btnEl.textContent = '⏳ Confirmando...'; btnEl.disabled = true; }
+
+  try {
+    const payload = {
+      accion: 'confirmarAgenda',
+      jornadas: {
+        [jornada]: { visitas: visitas.map(v => v.radicado), inspector }
+      }
+    };
+    const r = await fetch(CFG.webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Error al confirmar');
+
+    const j = jornada === 'manana' ? 'mañana' : 'tarde';
+    notif(`Jornada ${j} confirmada — ${d.actualizados||visitas.length} visitas asignadas a ${inspector.split(' ')[0]}`, 'ok');
+    // Limpiar selección del inspector para esa jornada
+    if (ST._inspectorSel) ST._inspectorSel[jornada] = null;
+    // Recargar stats y agenda de hoy
+    await cargarStats();
+  } catch(e) {
+    notif('Error al confirmar: ' + e.message, 'error');
+  } finally {
+    if (btnEl) { btnEl.textContent = orig; btnEl.disabled = false; }
+  }
 }
 
 </script>
